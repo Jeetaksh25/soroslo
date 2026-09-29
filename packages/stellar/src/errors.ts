@@ -10,12 +10,12 @@ export type ObserverErrorCode =
 export class StellarObserverError extends Error {
   readonly code: ObserverErrorCode;
   readonly retryable: boolean;
-  readonly status?: number;
+  readonly status: number | undefined;
 
   constructor(
     code: ObserverErrorCode,
     message: string,
-    options: { retryable?: boolean; status?: number; cause?: unknown } = {}
+    options: { retryable?: boolean; status?: number | undefined; cause?: unknown } = {}
   ) {
     super(message, { cause: options.cause });
     this.name = "StellarObserverError";
