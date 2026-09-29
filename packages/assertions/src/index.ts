@@ -1,7 +1,4 @@
-export {
-  evaluateAssertion,
-  evaluateAssertions
-} from "./assertion.js";
+export { evaluateAssertion, evaluateAssertions } from "./assertion.js";
 export type {
   AssertionOperator,
   AssertionReason,

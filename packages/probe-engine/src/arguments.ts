@@ -50,9 +50,8 @@ export function argumentToScVal(
   argument: ArgumentConfig,
   completedSteps: ReadonlyMap<string, CompletedStepValue>
 ): xdr.ScVal {
-  const value = "from" in argument
-    ? resolveReference(argument.from, completedSteps)
-    : argument.value;
+  const value =
+    "from" in argument ? resolveReference(argument.from, completedSteps) : argument.value;
 
   switch (argument.type) {
     case "bool":

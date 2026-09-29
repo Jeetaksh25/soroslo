@@ -16,17 +16,14 @@ void test("resolves nested paths and reports missing paths", () => {
     evaluateAssertion({ path: "$.quote.value", op: "gt", value: "41" }, root).passed,
     true
   );
-  assert.deepEqual(
-    evaluateAssertion({ path: "$.missing", op: "exists" }, root),
-    {
-      path: "$.missing",
-      operator: "exists",
-      expected: undefined,
-      observed: undefined,
-      passed: false,
-      reason: "missing_path"
-    }
-  );
+  assert.deepEqual(evaluateAssertion({ path: "$.missing", op: "exists" }, root), {
+    path: "$.missing",
+    operator: "exists",
+    expected: undefined,
+    observed: undefined,
+    passed: false,
+    reason: "missing_path"
+  });
 });
 
 void test("supports existence and deterministic equality assertions", () => {
@@ -40,10 +37,7 @@ void test("supports existence and deterministic equality assertions", () => {
     evaluateAssertion({ path: "$.items[1]", op: "equals", value: 2 }, root).passed,
     true
   );
-  assert.equal(
-    evaluateAssertion({ path: "$.unknown", op: "not_exists" }, root).passed,
-    true
-  );
+  assert.equal(evaluateAssertion({ path: "$.unknown", op: "not_exists" }, root).passed, true);
 });
 
 void test("evaluates freshness with an explicit observation clock", () => {
@@ -51,19 +45,13 @@ void test("evaluates freshness with an explicit observation clock", () => {
   const root = { updated_at: observedAtMs / 1_000 - 30 };
 
   assert.equal(
-    evaluateAssertion(
-      { path: "$.updated_at", op: "age_lt", value: "60s" },
-      root,
-      { observedAtMs }
-    ).passed,
+    evaluateAssertion({ path: "$.updated_at", op: "age_lt", value: "60s" }, root, { observedAtMs })
+      .passed,
     true
   );
   assert.equal(
-    evaluateAssertion(
-      { path: "$.updated_at", op: "age_lt", value: "10s" },
-      root,
-      { observedAtMs }
-    ).passed,
+    evaluateAssertion({ path: "$.updated_at", op: "age_lt", value: "10s" }, root, { observedAtMs })
+      .passed,
     false
   );
 });

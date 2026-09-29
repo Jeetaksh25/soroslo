@@ -53,7 +53,10 @@ const literalArgumentSchema = z
     }
 
     if (type === "bytes" && typeof value === "string" && !/^(?:[0-9a-fA-F]{2})*$/.test(value)) {
-      context.addIssue({ code: "custom", message: "bytes arguments must be an even-length hex string" });
+      context.addIssue({
+        code: "custom",
+        message: "bytes arguments must be an even-length hex string"
+      });
       return;
     }
 

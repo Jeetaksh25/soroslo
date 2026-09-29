@@ -2,15 +2,7 @@ import { canonicalJson, getJsonPath, parseDurationMs } from "@soroslo/shared";
 import { compareExactNumeric } from "./numeric.js";
 
 export type AssertionOperator =
-  | "equals"
-  | "not_equals"
-  | "gt"
-  | "gte"
-  | "lt"
-  | "lte"
-  | "exists"
-  | "not_exists"
-  | "age_lt";
+  "equals" | "not_equals" | "gt" | "gte" | "lt" | "lte" | "exists" | "not_exists" | "age_lt";
 
 export interface AssertionSpec {
   path: string;

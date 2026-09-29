@@ -73,10 +73,7 @@ unexpected: true
 });
 
 void test("rejects inline webhook secrets", () => {
-  const source = configYaml().replace(
-    "secret: ${WEBHOOK_SECRET}",
-    "secret: literal-secret"
-  );
+  const source = configYaml().replace("secret: ${WEBHOOK_SECRET}", "secret: literal-secret");
 
   assert.throws(
     () =>

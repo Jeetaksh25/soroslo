@@ -1,7 +1,4 @@
-import {
-  evaluateAssertions,
-  type AssertionResult
-} from "@soroslo/assertions";
+import { evaluateAssertions, type AssertionResult } from "@soroslo/assertions";
 import type { CheckConfig, StepConfig } from "@soroslo/config";
 import { parseDurationMs, type RunState } from "@soroslo/shared";
 import {
@@ -113,12 +110,7 @@ async function executeStep(
     args = resolveArguments(step.args, completedSteps);
   } catch (error) {
     if (error instanceof ReferenceResolutionError) {
-      return serviceFailure(
-        step,
-        ordinal,
-        "argument_resolution_failed",
-        error.message
-      );
+      return serviceFailure(step, ordinal, "argument_resolution_failed", error.message);
     }
 
     return serviceFailure(
@@ -212,14 +204,7 @@ export async function executeCheck(
   const observedAtMs = options.observedAtMs ?? Date.now();
 
   for (const [ordinal, step] of check.steps.entries()) {
-    const result = await executeStep(
-      step,
-      ordinal,
-      check,
-      completedSteps,
-      invoker,
-      observedAtMs
-    );
+    const result = await executeStep(step, ordinal, check, completedSteps, invoker, observedAtMs);
     steps.push(result);
 
     if (result.state !== "pass") {
@@ -237,9 +222,7 @@ export function createStellarStepInvoker(client: StellarRpcClient): StepInvoker 
         contractId: input.contractId,
         functionName: input.functionName,
         args: input.args,
-        ...(input.timeoutSeconds !== undefined
-          ? { timeoutSeconds: input.timeoutSeconds }
-          : {})
+        ...(input.timeoutSeconds !== undefined ? { timeoutSeconds: input.timeoutSeconds } : {})
       });
     }
   };
