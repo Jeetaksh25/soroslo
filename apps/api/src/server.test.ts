@@ -77,14 +77,20 @@ void test("serves operational and service read endpoints", async () => {
 
     const services = await app.inject({ method: "GET", url: "/api/v1/services" });
     assert.equal(services.statusCode, 200);
-    assert.equal(services.json().services[0].id, "payments");
+    const servicesBody = services.json() as {
+      services: Array<{ id: string }>;
+    };
+    assert.equal(servicesBody.services[0]?.id, "payments");
 
     const check = await app.inject({
       method: "GET",
       url: "/api/v1/checks/payments%3Ahealth"
     });
     assert.equal(check.statusCode, 200);
-    assert.equal(check.json().check.lastRunState, "pass");
+    const checkBody = check.json() as {
+      check: { lastRunState: string | null };
+    };
+    assert.equal(checkBody.check.lastRunState, "pass");
   } finally {
     await app.close();
     storage.close();
@@ -98,14 +104,20 @@ void test("returns run details and rolling SLO state", async () => {
   try {
     const run = await app.inject({ method: "GET", url: "/api/v1/runs/run-1" });
     assert.equal(run.statusCode, 200);
-    assert.equal(run.json().run.observedLedger, 123);
+    const runBody = run.json() as {
+      run: { observedLedger: number | null };
+    };
+    assert.equal(runBody.run.observedLedger, 123);
 
     const slo = await app.inject({
       method: "GET",
       url: "/api/v1/checks/payments%3Ahealth/slo"
     });
     assert.equal(slo.statusCode, 200);
-    assert.equal(slo.json().slo.status, "met");
+    const sloBody = slo.json() as {
+      slo: { status: string } | null;
+    };
+    assert.equal(sloBody.slo?.status, "met");
   } finally {
     await app.close();
     storage.close();
@@ -139,7 +151,8 @@ void test("manual run endpoint delegates to the configured runner", async () => 
     });
 
     assert.equal(response.statusCode, 202);
-    assert.equal(response.json().runId, "manual-run");
+    const responseBody = response.json() as { runId: string };
+    assert.equal(responseBody.runId, "manual-run");
     assert.equal(calls, 1);
   } finally {
     await app.close();
@@ -158,7 +171,8 @@ void test("invalid list limits return a structured 400", async () => {
     });
 
     assert.equal(response.statusCode, 400);
-    assert.equal(response.json().error, "bad_request");
+    const responseBody = response.json() as { error: string };
+    assert.equal(responseBody.error, "bad_request");
   } finally {
     await app.close();
     storage.close();
