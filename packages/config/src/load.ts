@@ -1,0 +1,117 @@
+import { createHash } from "node:crypto";
+import { StrKey } from "@stellar/stellar-sdk";
+import { canonicalJson } from "@soroslo/shared";
+import { parse } from "yaml";
+import { configSchema, type SoroSloConfig } from "./schema.js";
+
+export class ConfigError extends Error {
+  constructor(message: string, options: { cause?: unknown } = {}) {
+    super(message, options);
+    this.name = "ConfigError";
+  }
+}
+
+export interface LoadedConfig {
+  config: SoroSloConfig;
+  hash: string;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function assertWebhookSecretsAreReferences(rawConfig: unknown): void {
+  const root = asRecord(rawConfig);
+  const notifications = asRecord(root?.notifications);
+  const webhooks = notifications?.webhooks;
+
+  if (!Array.isArray(webhooks)) return;
+
+  for (const [index, webhook] of webhooks.entries()) {
+    const secret = asRecord(webhook)?.secret;
+    if (typeof secret !== "string" || !/^\$\{[A-Z_][A-Z0-9_]*\}$/.test(secret)) {
+      throw new ConfigError(
+        `notifications.webhooks[${index}].secret must be a direct environment reference`
+      );
+    }
+  }
+}
+
+function assertNoStellarSecretSeeds(value: unknown, path = "$"): void {
+  if (typeof value === "string") {
+    if (StrKey.isValidEd25519SecretSeed(value)) {
+      throw new ConfigError(`Stellar secret seed is forbidden in configuration at ${path}`);
+    }
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((child, index) => assertNoStellarSecretSeeds(child, `${path}[${index}]`));
+    return;
+  }
+
+  const record = asRecord(value);
+  if (!record) return;
+
+  for (const [key, child] of Object.entries(record)) {
+    assertNoStellarSecretSeeds(child, `${path}.${key}`);
+  }
+}
+
+export function expandEnvironment(
+  source: string,
+  environment: NodeJS.ProcessEnv = process.env
+): string {
+  return source.replace(/\$\{([A-Z_][A-Z0-9_]*)\}/g, (_match, name: string) => {
+    const value = environment[name];
+    if (value === undefined) {
+      throw new ConfigError(`Environment variable '${name}' is required but not set`);
+    }
+    return value;
+  });
+}
+
+export function hashConfig(config: SoroSloConfig): string {
+  return createHash("sha256").update(canonicalJson(config)).digest("hex");
+}
+
+export function loadConfigText(
+  source: string,
+  options: { environment?: NodeJS.ProcessEnv } = {}
+): LoadedConfig {
+  let raw: unknown;
+  try {
+    raw = parse(source);
+  } catch (error) {
+    throw new ConfigError("Unable to parse SoroSLO YAML", { cause: error });
+  }
+
+  assertWebhookSecretsAreReferences(raw);
+
+  const expandedSource = expandEnvironment(source, options.environment ?? process.env);
+
+  let expanded: unknown;
+  try {
+    expanded = parse(expandedSource);
+  } catch (error) {
+    throw new ConfigError("Unable to parse expanded SoroSLO YAML", { cause: error });
+  }
+
+  assertNoStellarSecretSeeds(expanded);
+
+  const result = configSchema.safeParse(expanded);
+  if (!result.success) {
+    throw new ConfigError(
+      `Invalid SoroSLO configuration: ${result.error.issues
+        .map((issue) => `${issue.path.join(".") || "$"}: ${issue.message}`)
+        .join("; ")}`
+    );
+  }
+
+  return {
+    config: result.data,
+    hash: hashConfig(result.data)
+  };
+}

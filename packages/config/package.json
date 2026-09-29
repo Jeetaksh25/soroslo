@@ -7,6 +7,20 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test"
+    "test": "pnpm build && node --test dist/*.test.js"
+  },
+  "dependencies": {
+    "@soroslo/shared": "workspace:*",
+    "@stellar/stellar-sdk": "17.2.0",
+    "yaml": "2.8.1",
+    "zod": "4.1.5"
+  },
+  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
   }
 }
