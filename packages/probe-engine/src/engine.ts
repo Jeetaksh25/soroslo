@@ -217,7 +217,7 @@ export async function executeCheck(
 
 export function createStellarStepInvoker(client: StellarRpcClient): StepInvoker {
   return {
-    async invoke(input): Promise<SimulationEvidence> {
+    invoke(input): Promise<SimulationEvidence> {
       return simulateInvocation(client, {
         contractId: input.contractId,
         functionName: input.functionName,
