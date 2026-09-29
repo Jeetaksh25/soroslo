@@ -34,8 +34,8 @@ ${extraStep}
 notifications:
   webhooks:
     - id: ops
-      url: ${WEBHOOK_URL}
-      secret: ${WEBHOOK_SECRET}
+      url: \${WEBHOOK_URL}
+      secret: \${WEBHOOK_SECRET}
 `;
 }
 
