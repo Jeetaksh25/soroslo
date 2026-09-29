@@ -35,7 +35,7 @@ const app = await startApi({
   storage,
   config: loaded.config,
   configHash: loaded.hash,
-  version: process.env.SOROSLO_VERSION ?? "0.1.0-dev",
+  version: process.env.SOROSLO_VERSION ?? "0.1.0",
   host,
   port,
   ...(process.env.SOROSLO_ADMIN_TOKEN !== undefined
