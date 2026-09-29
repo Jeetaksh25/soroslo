@@ -61,7 +61,7 @@ void test("migrates and synchronizes services/checks idempotently", () => {
       count: number;
     };
 
-    assert.equal(migrationCount.count, 1);
+    assert.equal(migrationCount.count, 2);
     assert.equal(checkCount.count, 1);
   } finally {
     storage.close();
@@ -250,6 +250,83 @@ void test("persists incident runtime and lifecycle", () => {
     );
 
     assert.equal(storage.getIncident("incident-1")?.state, "recovered");
+  } finally {
+    storage.close();
+  }
+});
+
+
+void test("deduplicates notification events and records delivery attempts", () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    storage.syncConfiguration(config, "config-hash");
+    const checkId = qualifiedCheckId("payments", "health");
+
+    storage.recordRun({
+      id: "opening-run-notify",
+      idempotencyKey: "manual:notify-opening",
+      checkId,
+      startedAt: "2026-09-29T18:20:00.000Z",
+      finishedAt: "2026-09-29T18:20:01.000Z",
+      state: "service_fail",
+      configHash: "config-hash",
+      steps: []
+    });
+    storage.openIncident({
+      id: "incident-notify",
+      checkId,
+      openedAt: "2026-09-29T18:20:01.000Z",
+      openingRunId: "opening-run-notify",
+      failureCount: 2,
+      summary: "Health check failed"
+    });
+
+    const claim = {
+      eventId: "event-1",
+      channelId: "ops",
+      incidentId: "incident-notify",
+      payloadHash: "payload-hash",
+      claimedAt: "2026-09-29T18:20:02.000Z",
+      staleBefore: "2026-09-29T18:19:02.000Z"
+    };
+
+    assert.equal(storage.claimNotification(claim), true);
+    assert.equal(storage.claimNotification(claim), false);
+
+    storage.recordNotificationAttempt({
+      id: "attempt-1",
+      eventId: "event-1",
+      incidentId: "incident-notify",
+      channelId: "ops",
+      eventType: "opened",
+      payloadHash: "payload-hash",
+      attempt: 1,
+      startedAt: "2026-09-29T18:20:02.000Z",
+      finishedAt: "2026-09-29T18:20:03.000Z",
+      state: "delivered",
+      responseCode: 204
+    });
+    storage.completeNotification({
+      eventId: "event-1",
+      channelId: "ops",
+      state: "delivered",
+      finishedAt: "2026-09-29T18:20:03.000Z"
+    });
+
+    assert.equal(
+      storage.claimNotification({
+        ...claim,
+        claimedAt: "2026-09-29T18:30:00.000Z",
+        staleBefore: "2026-09-29T18:29:00.000Z"
+      }),
+      false
+    );
+
+    const attempts = storage.listNotificationAttempts("incident-notify");
+    assert.equal(attempts.length, 1);
+    assert.equal(attempts[0]?.channelId, "ops");
+    assert.equal(attempts[0]?.state, "delivered");
   } finally {
     storage.close();
   }
