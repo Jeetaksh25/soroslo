@@ -175,7 +175,10 @@ async function deliverChannel(options: {
         await options.sleepImpl(
           retryDelay(attempt, options.baseDelayMs, options.maxDelayMs, options.random)
         );
+        continue;
       }
+
+      break;
     }
   } catch (error) {
     lastErrorClass = error instanceof Error ? error.message : String(error);
