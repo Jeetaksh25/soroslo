@@ -1,7 +1,4 @@
-export {
-  createIncidentNotificationEvent,
-  incidentEventId
-} from "./event.js";
+export { createIncidentNotificationEvent, incidentEventId } from "./event.js";
 export { signWebhookBody } from "./signature.js";
 export { assertWebhookTargetAllowed, isPrivateAddress } from "./url-policy.js";
 export { deliverWebhookEvent } from "./webhook.js";

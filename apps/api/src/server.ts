@@ -4,10 +4,7 @@ import { parseDurationMs } from "@soroslo/shared";
 import { calculateSloSnapshot } from "@soroslo/slo-engine";
 import { qualifiedCheckId, type SoroSloStorage } from "@soroslo/storage";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
-import {
-  assertRemoteBindIsAuthenticated,
-  requestHasBearerToken
-} from "./security.js";
+import { assertRemoteBindIsAuthenticated, requestHasBearerToken } from "./security.js";
 
 export interface ManualRunResponse {
   runId: string;
@@ -78,13 +75,10 @@ export function buildApi(options: ApiOptions): FastifyInstance {
     }
 
     if (!requestHasBearerToken(request, options.adminToken)) {
-      void reply
-        .header("www-authenticate", 'Bearer realm="SoroSLO"')
-        .code(401)
-        .send({
-          error: "unauthorized",
-          message: "A valid SoroSLO administrator bearer token is required"
-        });
+      void reply.header("www-authenticate", 'Bearer realm="SoroSLO"').code(401).send({
+        error: "unauthorized",
+        message: "A valid SoroSLO administrator bearer token is required"
+      });
       return;
     }
 

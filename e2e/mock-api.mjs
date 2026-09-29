@@ -143,10 +143,7 @@ const server = createServer((request, response) => {
     return;
   }
 
-  if (
-    request.method === "GET" &&
-    path === "/api/v1/checks/payments:health/slo"
-  ) {
+  if (request.method === "GET" && path === "/api/v1/checks/payments:health/slo") {
     json(response, 200, {
       checkId: "payments:health",
       slo: {
@@ -199,10 +196,7 @@ const server = createServer((request, response) => {
     return;
   }
 
-  if (
-    request.method === "POST" &&
-    path === "/api/v1/checks/payments:health/run"
-  ) {
+  if (request.method === "POST" && path === "/api/v1/checks/payments:health/run") {
     json(response, 202, {
       requestId: "request-e2e",
       runId: "manual-run",

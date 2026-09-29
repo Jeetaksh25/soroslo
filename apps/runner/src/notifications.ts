@@ -22,9 +22,7 @@ export async function notifyExecutionTransition(options: {
 
   if (!eventType || !incidentId || channels.length === 0) return [];
 
-  const service = options.config.services.find(
-    (candidate) => candidate.id === options.serviceId
-  );
+  const service = options.config.services.find((candidate) => candidate.id === options.serviceId);
   if (!service) {
     throw new Error(`Unknown service '${options.serviceId}' for notification`);
   }
@@ -37,14 +35,11 @@ export async function notifyExecutionTransition(options: {
     serviceName: service.name,
     checkId: qualifiedCheckId(service.id, options.check.id),
     checkName: options.check.name,
-    currentState:
-      eventType === "opened" ? "incident_open" : "healthy",
+    currentState: eventType === "opened" ? "incident_open" : "healthy",
     observedSli: options.execution.slo?.observedSli ?? null,
     sloStatus: options.execution.slo?.status ?? null,
     timestamp: options.execution.finishedAt,
-    ...(options.dashboardUrl !== undefined
-      ? { dashboardUrl: options.dashboardUrl }
-      : {})
+    ...(options.dashboardUrl !== undefined ? { dashboardUrl: options.dashboardUrl } : {})
   });
 
   return deliverWebhookEvent({

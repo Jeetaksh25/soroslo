@@ -1,9 +1,6 @@
 import type { SoroSloConfig } from "@soroslo/config";
 import { createStellarStepInvoker } from "@soroslo/probe-engine";
-import {
-  notifyExecutionTransition,
-  runCheckAndPersist
-} from "@soroslo/runner";
+import { notifyExecutionTransition, runCheckAndPersist } from "@soroslo/runner";
 import { parseDurationMs } from "@soroslo/shared";
 import { StellarRpcClient, resolveNetworkConfig, type NetworkConfigInput } from "@soroslo/stellar";
 import type { SoroSloStorage } from "@soroslo/storage";
@@ -62,9 +59,7 @@ export function createDefaultManualRunHandler(options: {
         serviceId,
         check,
         execution,
-        ...(options.dashboardUrl !== undefined
-          ? { dashboardUrl: options.dashboardUrl }
-          : {}),
+        ...(options.dashboardUrl !== undefined ? { dashboardUrl: options.dashboardUrl } : {}),
         ...(options.allowPrivateWebhookNetwork !== undefined
           ? { allowPrivateNetwork: options.allowPrivateWebhookNetwork }
           : {})

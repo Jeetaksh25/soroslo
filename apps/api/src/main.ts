@@ -19,8 +19,7 @@ const configPath = resolve(process.env.SOROSLO_CONFIG_PATH ?? "./soroslo.yml");
 const loaded = loadConfigText(readFileSync(configPath, "utf8"));
 
 const databasePath = resolve(
-  process.env.SOROSLO_DB_PATH ??
-    resolve(loaded.config.runtime.dataDir, "soroslo.sqlite")
+  process.env.SOROSLO_DB_PATH ?? resolve(loaded.config.runtime.dataDir, "soroslo.sqlite")
 );
 mkdirSync(dirname(databasePath), { recursive: true });
 
@@ -47,8 +46,7 @@ const app = await startApi({
     config: loaded.config,
     configHash: loaded.hash,
     ...(dashboardUrl !== undefined ? { dashboardUrl } : {}),
-    allowPrivateWebhookNetwork:
-      process.env.SOROSLO_ALLOW_PRIVATE_WEBHOOKS === "true"
+    allowPrivateWebhookNetwork: process.env.SOROSLO_ALLOW_PRIVATE_WEBHOOKS === "true"
   })
 });
 

@@ -255,7 +255,6 @@ void test("persists incident runtime and lifecycle", () => {
   }
 });
 
-
 void test("deduplicates notification events and records delivery attempts", () => {
   const storage = SoroSloStorage.open();
   try {

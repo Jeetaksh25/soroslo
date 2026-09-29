@@ -5,11 +5,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { loadConfigText } from "@soroslo/config";
 import { createStellarStepInvoker } from "@soroslo/probe-engine";
 import { parseDurationMs } from "@soroslo/shared";
-import {
-  StellarRpcClient,
-  resolveNetworkConfig,
-  type NetworkConfigInput
-} from "@soroslo/stellar";
+import { StellarRpcClient, resolveNetworkConfig, type NetworkConfigInput } from "@soroslo/stellar";
 import { SoroSloStorage } from "@soroslo/storage";
 import { runCheckAndPersist } from "./execution.js";
 import { notifyExecutionTransition } from "./notifications.js";
@@ -28,8 +24,7 @@ function positiveIntegerEnvironment(name: string, fallback: number): number {
 const configPath = resolve(process.env.SOROSLO_CONFIG_PATH ?? "./soroslo.yml");
 const loaded = loadConfigText(readFileSync(configPath, "utf8"));
 const databasePath = resolve(
-  process.env.SOROSLO_DB_PATH ??
-    resolve(loaded.config.runtime.dataDir, "soroslo.sqlite")
+  process.env.SOROSLO_DB_PATH ?? resolve(loaded.config.runtime.dataDir, "soroslo.sqlite")
 );
 mkdirSync(dirname(databasePath), { recursive: true });
 
@@ -70,13 +65,10 @@ const scheduledChecks: ScheduledCheck[] = loaded.config.services.flatMap((servic
 );
 
 const dashboardUrl = process.env.SOROSLO_DASHBOARD_URL;
-const allowPrivateWebhookNetwork =
-  process.env.SOROSLO_ALLOW_PRIVATE_WEBHOOKS === "true";
+const allowPrivateWebhookNetwork = process.env.SOROSLO_ALLOW_PRIVATE_WEBHOOKS === "true";
 
 const scheduler = new RestartSafeScheduler({
-  ownerId:
-    process.env.SOROSLO_RUNNER_ID ??
-    `${hostname()}:${process.pid}`,
+  ownerId: process.env.SOROSLO_RUNNER_ID ?? `${hostname()}:${process.pid}`,
   store: storage,
   concurrency: positiveIntegerEnvironment("SOROSLO_RUNNER_CONCURRENCY", 4),
   leaseMs: positiveIntegerEnvironment("SOROSLO_RUNNER_LEASE_MS", 60_000),

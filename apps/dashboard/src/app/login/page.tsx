@@ -37,10 +37,12 @@ export default function LoginPage() {
       <div className="login-card">
         <p className="eyebrow">Administrator access</p>
         <h1>SoroSLO</h1>
-        <p className="lede">
-          Enter the administrator bearer token configured for this deployment.
-        </p>
-        <form onSubmit={(event) => { void submit(event); }}>
+        <p className="lede">Enter the administrator bearer token configured for this deployment.</p>
+        <form
+          onSubmit={(event) => {
+            void submit(event);
+          }}
+        >
           <label htmlFor="token">Administrator token</label>
           <input
             id="token"

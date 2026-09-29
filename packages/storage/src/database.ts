@@ -825,7 +825,6 @@ export class SoroSloStorage {
       });
   }
 
-
   claimNotification(input: {
     eventId: string;
     channelId: string;
@@ -837,22 +836,26 @@ export class SoroSloStorage {
     this.database.exec("BEGIN IMMEDIATE");
     try {
       const rawRow = this.database
-        .prepare(`
+        .prepare(
+          `
           SELECT state, payload_hash, claimed_at
           FROM notification_events
           WHERE event_id = ? AND channel_id = ?
-        `)
+        `
+        )
         .get(input.eventId, input.channelId);
 
       if (rawRow === undefined) {
         this.database
-          .prepare(`
+          .prepare(
+            `
             INSERT INTO notification_events(
               event_id, channel_id, incident_id, payload_hash,
               state, claimed_at, finished_at, last_error
             )
             VALUES (?, ?, ?, ?, 'delivering', ?, NULL, NULL)
-          `)
+          `
+          )
           .run(
             input.eventId,
             input.channelId,
@@ -870,9 +873,7 @@ export class SoroSloStorage {
       const claimedAt = requiredString(row.claimed_at, "claimed_at");
 
       if (payloadHash !== input.payloadHash) {
-        throw new Error(
-          `Notification event collision for ${input.eventId}/${input.channelId}`
-        );
+        throw new Error(`Notification event collision for ${input.eventId}/${input.channelId}`);
       }
 
       if (state === "delivered") {
@@ -886,7 +887,8 @@ export class SoroSloStorage {
       }
 
       this.database
-        .prepare(`
+        .prepare(
+          `
           UPDATE notification_events
           SET incident_id = ?,
               state = 'delivering',
@@ -894,13 +896,9 @@ export class SoroSloStorage {
               finished_at = NULL,
               last_error = NULL
           WHERE event_id = ? AND channel_id = ?
-        `)
-        .run(
-          input.incidentId,
-          input.claimedAt,
-          input.eventId,
-          input.channelId
-        );
+        `
+        )
+        .run(input.incidentId, input.claimedAt, input.eventId, input.channelId);
 
       this.database.exec("COMMIT");
       return true;
@@ -925,14 +923,16 @@ export class SoroSloStorage {
     errorClass?: string;
   }): void {
     this.database
-      .prepare(`
+      .prepare(
+        `
         INSERT INTO notification_attempts(
           id, incident_id, channel_id, event_type, attempt,
           started_at, finished_at, state, response_code, error_class,
           event_id, payload_hash
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `)
+      `
+      )
       .run(
         input.id,
         input.incidentId,
@@ -957,20 +957,16 @@ export class SoroSloStorage {
     lastError?: string;
   }): void {
     this.database
-      .prepare(`
+      .prepare(
+        `
         UPDATE notification_events
         SET state = ?,
             finished_at = ?,
             last_error = ?
         WHERE event_id = ? AND channel_id = ?
-      `)
-      .run(
-        input.state,
-        input.finishedAt,
-        input.lastError ?? null,
-        input.eventId,
-        input.channelId
-      );
+      `
+      )
+      .run(input.state, input.finishedAt, input.lastError ?? null, input.eventId, input.channelId);
   }
 
   listNotificationAttempts(incidentId: string): NotificationAttemptSummary[] {

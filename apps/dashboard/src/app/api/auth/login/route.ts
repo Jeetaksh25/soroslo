@@ -10,10 +10,7 @@ function matchesToken(supplied: string, expected: string): boolean {
 }
 
 function sessionValue(token: string): string {
-  return createHash("sha256")
-    .update("soroslo-dashboard:")
-    .update(token)
-    .digest("hex");
+  return createHash("sha256").update("soroslo-dashboard:").update(token).digest("hex");
 }
 
 export async function POST(request: Request): Promise<Response> {

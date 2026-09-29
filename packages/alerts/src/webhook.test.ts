@@ -53,10 +53,7 @@ function sampleEvent() {
 }
 
 void test("creates deterministic event IDs and webhook signatures", () => {
-  assert.equal(
-    incidentEventId("incident-1", "opened"),
-    incidentEventId("incident-1", "opened")
-  );
+  assert.equal(incidentEventId("incident-1", "opened"), incidentEventId("incident-1", "opened"));
   assert.notEqual(
     incidentEventId("incident-1", "opened"),
     incidentEventId("incident-1", "recovered")

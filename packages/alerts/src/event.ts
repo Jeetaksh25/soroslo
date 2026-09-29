@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
 import type { IncidentNotificationEvent, IncidentNotificationType } from "./types.js";
 
-export function incidentEventId(
-  incidentId: string,
-  eventType: IncidentNotificationType
-): string {
+export function incidentEventId(incidentId: string, eventType: IncidentNotificationType): string {
   return createHash("sha256")
     .update("soroslo:incident:")
     .update(incidentId)

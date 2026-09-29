@@ -179,7 +179,6 @@ void test("invalid list limits return a structured 400", async () => {
   }
 });
 
-
 void test("protects the API with an administrator bearer token when configured", async () => {
   const storage = seededStorage();
   const app = buildApi({
@@ -195,10 +194,7 @@ void test("protects the API with an administrator bearer token when configured",
       url: "/api/v1/services"
     });
     assert.equal(unauthorized.statusCode, 401);
-    assert.equal(
-      unauthorized.headers["www-authenticate"],
-      'Bearer realm="SoroSLO"'
-    );
+    assert.equal(unauthorized.headers["www-authenticate"], 'Bearer realm="SoroSLO"');
 
     const authorized = await app.inject({
       method: "GET",

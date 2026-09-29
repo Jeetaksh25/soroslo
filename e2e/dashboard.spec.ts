@@ -12,9 +12,7 @@ test("overview exposes reliability state and SLO evidence", async ({ page }) => 
   await expect(page.getByText("Health failed 2 consecutive runs")).toBeVisible();
 });
 
-test("check view can trigger a manual run through the same-origin proxy", async ({
-  page
-}) => {
+test("check view can trigger a manual run through the same-origin proxy", async ({ page }) => {
   await page.goto("/checks/payments%3Ahealth");
 
   await expect(page.getByRole("heading", { name: "Health" })).toBeVisible();

@@ -31,16 +31,11 @@ export function assertRemoteBindIsAuthenticated(
 ): void {
   if (isLoopbackHost(host)) return;
   if (!adminToken?.trim()) {
-    throw new Error(
-      "Remote API bind requires SOROSLO_ADMIN_TOKEN (or ApiOptions.adminToken)"
-    );
+    throw new Error("Remote API bind requires SOROSLO_ADMIN_TOKEN (or ApiOptions.adminToken)");
   }
 }
 
-export function requestHasBearerToken(
-  request: FastifyRequest,
-  expectedToken: string
-): boolean {
+export function requestHasBearerToken(request: FastifyRequest, expectedToken: string): boolean {
   const authorization = request.headers.authorization;
   return bearerTokenMatches(authorization, expectedToken);
 }

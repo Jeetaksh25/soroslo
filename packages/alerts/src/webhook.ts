@@ -113,11 +113,7 @@ async function deliverChannel(options: {
             "user-agent": "SoroSLO/0.1",
             "x-soroslo-event-id": options.event.eventId,
             "x-soroslo-timestamp": timestamp,
-            "x-soroslo-signature": signWebhookBody(
-              options.channel.secret,
-              timestamp,
-              options.body
-            )
+            "x-soroslo-signature": signWebhookBody(options.channel.secret, timestamp, options.body)
           },
           body: options.body
         });
