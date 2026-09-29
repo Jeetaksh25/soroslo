@@ -61,7 +61,7 @@ export async function POST(request: Request): Promise<Response> {
   cookieStore.set("soroslo_session", sessionValue(expected), {
     httpOnly: true,
     sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.SOROSLO_COOKIE_SECURE === "true",
     path: "/"
   });
 
