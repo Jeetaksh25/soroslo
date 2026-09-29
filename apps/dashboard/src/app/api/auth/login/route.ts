@@ -36,13 +36,12 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const token =
-    typeof body === "object" &&
-    body !== null &&
-    !Array.isArray(body) &&
-    typeof (body as Record<string, unknown>).token === "string"
-      ? (body as Record<string, unknown>).token
-      : "";
+  const record =
+    typeof body === "object" && body !== null && !Array.isArray(body)
+      ? (body as Record<string, unknown>)
+      : {};
+  const rawToken = record.token;
+  const token = typeof rawToken === "string" ? rawToken : "";
 
   if (!token || !matchesToken(token, expected)) {
     return Response.json(
