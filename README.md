@@ -10,7 +10,7 @@ SoroSLO answers a different question from a contract explorer or TTL monitor:
 
 ## Project status
 
-SoroSLO is in **pre-v0.1 active development**. The v0.1 technical contract is frozen in [`docs/technical-spec-v0.1.md`](docs/technical-spec-v0.1.md). The repository currently contains the M0 foundation and package boundaries; runtime functionality lands milestone by milestone.
+SoroSLO is in **pre-v0.1 active development**. The v0.1 technical contract is frozen in [`docs/technical-spec-v0.1.md`](docs/technical-spec-v0.1.md). Milestones M0–M5 now provide the probe engine, check execution, persistence/reliability layer, API/dashboard, signed notifications, authentication, Docker Compose packaging, and browser E2E coverage.
 
 ## Core principles
 
@@ -94,7 +94,7 @@ pnpm install
 pnpm verify
 ```
 
-The M0 scaffold intentionally keeps application packages framework-light. Fastify, Next.js, Stellar SDK, SQLite, Vitest, and Playwright are introduced in the milestone that owns each capability instead of being added as unused dependencies.
+For self-hosting, copy `.env.example` to `.env`, create `soroslo.yml`, and run `docker compose up --build -d`. See [`docs/operations.md`](docs/operations.md) for API/runner process options, authentication, webhook verification, and remote-deployment guidance.
 
 ## Security
 
