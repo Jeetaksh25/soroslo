@@ -69,7 +69,7 @@ jobs:
           )"
           echo "contract_id=$CONTRACT_ID" >> "$GITHUB_OUTPUT"
           echo "### Testnet fixture" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Contract ID: `$CONTRACT_ID`" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Contract ID: $CONTRACT_ID" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Sanity-check fixture read
         env:
@@ -100,7 +100,7 @@ jobs:
             echo "- SoroSLO runtime signing key: none"
             echo "- SoroSLO RPC operation: simulateTransaction"
             echo "- Evidence artifact: soroslo-testnet-acceptance-$GITHUB_RUN_ID"
-            echo "- Contract ID: `$CONTRACT_ID`"
+            echo "- Contract ID: $CONTRACT_ID"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload acceptance evidence
