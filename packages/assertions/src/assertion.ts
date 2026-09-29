@@ -21,15 +21,15 @@ export type AssertionReason =
 export interface AssertionResult {
   path: string;
   operator: AssertionOperator;
-  expected: unknown | undefined;
-  observed: unknown | undefined;
+  expected: unknown;
+  observed: unknown;
   passed: boolean;
   reason: AssertionReason;
 }
 
 function result(
   spec: AssertionSpec,
-  observed: unknown | undefined,
+  observed: unknown,
   passed: boolean,
   reason: AssertionReason
 ): AssertionResult {
