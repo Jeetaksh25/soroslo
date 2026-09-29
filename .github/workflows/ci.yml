@@ -50,6 +50,11 @@ jobs:
       - name: Verify repository structure
         run: pnpm verify:structure
 
+      - name: Validate Docker Compose
+        env:
+          SOROSLO_ADMIN_TOKEN: ci-compose-validation-token
+        run: docker compose config --quiet
+
   e2e:
     needs: quality
     runs-on: ubuntu-latest
