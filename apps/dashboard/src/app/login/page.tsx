@@ -1,10 +1,8 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 export default function LoginPage() {
-  const searchParams = useSearchParams();
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -26,7 +24,7 @@ export default function LoginPage() {
         throw new Error(body.message ?? "Authentication failed");
       }
 
-      const next = searchParams.get("next");
+      const next = new URLSearchParams(window.location.search).get("next");
       window.location.assign(next?.startsWith("/") ? next : "/");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
