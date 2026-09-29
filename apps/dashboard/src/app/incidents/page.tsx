@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { StatusPill } from "../../components/status-pill";
 import { formatDate, getIncidents } from "../../lib/api";
