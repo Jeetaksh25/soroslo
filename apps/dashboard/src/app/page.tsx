@@ -2,12 +2,18 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { StatusPill } from "../components/status-pill";
-import { formatDate, getIncidents, getService, getServices } from "../lib/api";
+import { formatDate, formatPercent, getIncidents, getService, getServices, getSlo } from "../lib/api";
 
 export default async function OverviewPage() {
   const [services, incidents] = await Promise.all([getServices(), getIncidents()]);
   const serviceDetails = await Promise.all(services.map((service) => getService(service.id)));
   const checks = serviceDetails.flatMap((item) => item.service.checks);
+  const checkRows = await Promise.all(
+    checks.map(async (check) => ({
+      check,
+      slo: await getSlo(check.id)
+    }))
+  );
   const activeIncidents = incidents.filter((incident) => incident.state === "open");
   const passing = checks.filter((check) => check.lastRunState === "pass").length;
 
@@ -58,11 +64,14 @@ export default async function OverviewPage() {
                 <th>Schedule</th>
                 <th>Operational state</th>
                 <th>Last run</th>
+                <th>SLI / target</th>
+                <th>Coverage</th>
+                <th>Error budget</th>
                 <th>Observed</th>
               </tr>
             </thead>
             <tbody>
-              {checks.map((check) => (
+              {checkRows.map(({ check, slo }) => (
                 <tr key={check.id}>
                   <td>
                     <Link href={`/checks/${encodeURIComponent(check.id)}`} className="table-link">
@@ -73,11 +82,14 @@ export default async function OverviewPage() {
                   <td>{check.schedule}</td>
                   <td><StatusPill value={check.operationalState} /></td>
                   <td><StatusPill value={check.lastRunState} /></td>
+                  <td>{slo ? `${formatPercent(slo.observedSli)} / ${slo.target.toFixed(2)}%` : "—"}</td>
+                  <td>{slo ? formatPercent(slo.dataCoverage) : "—"}</td>
+                  <td>{slo?.errorBudgetConsumptionRatio === null || slo === null ? "—" : `${(slo.errorBudgetConsumptionRatio * 100).toFixed(1)}%`}</td>
                   <td>{formatDate(check.lastRunFinishedAt)}</td>
                 </tr>
               ))}
-              {checks.length === 0 ? (
-                <tr><td colSpan={6} className="empty">No checks have been configured yet.</td></tr>
+              {checkRows.length === 0 ? (
+                <tr><td colSpan={9} className="empty">No checks have been configured yet.</td></tr>
               ) : null}
             </tbody>
           </table>
@@ -103,6 +115,7 @@ export default async function OverviewPage() {
               <div className="incident-meta">
                 <span>Opened {formatDate(incident.openedAt)}</span>
                 <span>{incident.failureCount} failures at open</span>
+                <Link href={`/incidents/${encodeURIComponent(incident.id)}`}>Incident detail</Link>
               </div>
             </article>
           ))}
