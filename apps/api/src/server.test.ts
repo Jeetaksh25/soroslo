@@ -77,9 +77,9 @@ void test("serves operational and service read endpoints", async () => {
 
     const services = await app.inject({ method: "GET", url: "/api/v1/services" });
     assert.equal(services.statusCode, 200);
-    const servicesBody = services.json() as {
+    const servicesBody = services.json<{
       services: Array<{ id: string }>;
-    };
+    }>();
     assert.equal(servicesBody.services[0]?.id, "payments");
 
     const check = await app.inject({
@@ -87,9 +87,9 @@ void test("serves operational and service read endpoints", async () => {
       url: "/api/v1/checks/payments%3Ahealth"
     });
     assert.equal(check.statusCode, 200);
-    const checkBody = check.json() as {
+    const checkBody = check.json<{
       check: { lastRunState: string | null };
-    };
+    }>();
     assert.equal(checkBody.check.lastRunState, "pass");
   } finally {
     await app.close();
@@ -104,9 +104,9 @@ void test("returns run details and rolling SLO state", async () => {
   try {
     const run = await app.inject({ method: "GET", url: "/api/v1/runs/run-1" });
     assert.equal(run.statusCode, 200);
-    const runBody = run.json() as {
+    const runBody = run.json<{
       run: { observedLedger: number | null };
-    };
+    }>();
     assert.equal(runBody.run.observedLedger, 123);
 
     const slo = await app.inject({
@@ -114,9 +114,9 @@ void test("returns run details and rolling SLO state", async () => {
       url: "/api/v1/checks/payments%3Ahealth/slo"
     });
     assert.equal(slo.statusCode, 200);
-    const sloBody = slo.json() as {
+    const sloBody = slo.json<{
       slo: { status: string } | null;
-    };
+    }>();
     assert.equal(sloBody.slo?.status, "met");
   } finally {
     await app.close();
@@ -151,7 +151,7 @@ void test("manual run endpoint delegates to the configured runner", async () => 
     });
 
     assert.equal(response.statusCode, 202);
-    const responseBody = response.json() as { runId: string };
+    const responseBody = response.json<{ runId: string }>();
     assert.equal(responseBody.runId, "manual-run");
     assert.equal(calls, 1);
   } finally {
@@ -171,7 +171,7 @@ void test("invalid list limits return a structured 400", async () => {
     });
 
     assert.equal(response.statusCode, 400);
-    const responseBody = response.json() as { error: string };
+    const responseBody = response.json<{ error: string }>();
     assert.equal(responseBody.error, "bad_request");
   } finally {
     await app.close();
