@@ -1,4 +1,4 @@
-import { apiBaseUrl } from "../../../../lib/api";
+import { apiBaseUrl, apiRequestHeaders } from "../../../../lib/api";
 
 export async function POST(
   _request: Request,
@@ -7,7 +7,8 @@ export async function POST(
   const { checkId } = await context.params;
   const response = await fetch(`${apiBaseUrl}/api/v1/checks/${encodeURIComponent(checkId)}/run`, {
     method: "POST",
-    cache: "no-store"
+    cache: "no-store",
+    headers: apiRequestHeaders()
   });
 
   return new Response(await response.text(), {
