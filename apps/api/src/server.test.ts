@@ -99,7 +99,12 @@ void test("serves operational and service read endpoints", async () => {
 
 void test("returns run details and rolling SLO state", async () => {
   const storage = seededStorage();
-  const app = buildApi({ storage, config, configHash: "config-a" });
+  const app = buildApi({
+    storage,
+    config,
+    configHash: "config-a",
+    now: () => new Date("2026-09-29T18:30:00.000Z")
+  });
 
   try {
     const run = await app.inject({ method: "GET", url: "/api/v1/runs/run-1" });
