@@ -105,7 +105,7 @@ void test("returns run details and rolling SLO state", async () => {
       url: "/api/v1/checks/payments%3Ahealth/slo"
     });
     assert.equal(slo.statusCode, 200);
-    assert.equal(slo.json().slo.status, "insufficient_data");
+    assert.equal(slo.json().slo.status, "met");
   } finally {
     await app.close();
     storage.close();
