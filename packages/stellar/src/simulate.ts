@@ -2,7 +2,10 @@ import type { xdr } from "@stellar/stellar-sdk";
 import type { SimulationEvidence } from "./evidence.js";
 import { toSimulationEvidence } from "./evidence.js";
 import type { StellarRpcClient } from "./rpc-client.js";
-import { buildSimulationTransaction } from "./transaction.js";
+import {
+  buildSimulationTransaction,
+  type SimulationTransactionInput
+} from "./transaction.js";
 
 export interface SimulateInvocationInput {
   contractId: string;
@@ -15,13 +18,17 @@ export async function simulateInvocation(
   client: StellarRpcClient,
   input: SimulateInvocationInput
 ): Promise<SimulationEvidence> {
-  const transaction = buildSimulationTransaction({
+  const transactionInput: SimulationTransactionInput = {
     contractId: input.contractId,
     functionName: input.functionName,
-    args: input.args,
-    timeoutSeconds: input.timeoutSeconds,
-    networkPassphrase: client.config.networkPassphrase
-  });
+    networkPassphrase: client.config.networkPassphrase,
+    ...(input.args !== undefined ? { args: input.args } : {}),
+    ...(input.timeoutSeconds !== undefined
+      ? { timeoutSeconds: input.timeoutSeconds }
+      : {})
+  };
+
+  const transaction = buildSimulationTransaction(transactionInput);
 
   const started = performance.now();
   const response = await client.simulateTransaction(transaction);
