@@ -115,7 +115,7 @@ export type AssertionConfig = z.infer<typeof assertionSchema>;
 export const stepSchema = z
   .object({
     id: idSchema,
-    contract: z.string().refine(StrKey.isValidContract, "must be a valid Stellar contract strkey"),
+    contract: z.string().refine((value) => StrKey.isValidContract(value), "must be a valid Stellar contract strkey"),
     function: z.string().min(1).max(64),
     args: z.array(argumentSchema).default([]),
     assertions: z.array(assertionSchema).default([])
