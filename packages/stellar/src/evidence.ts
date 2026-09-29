@@ -1,10 +1,7 @@
 import { rpc } from "@stellar/stellar-sdk";
 import { normalizeScVal, type NormalizedValue } from "./normalize.js";
 
-export type SimulationEvidenceStatus =
-  | "success"
-  | "restore_required"
-  | "simulation_error";
+export type SimulationEvidenceStatus = "success" | "restore_required" | "simulation_error";
 
 export interface SimulationResourceEvidence {
   instructions: number;

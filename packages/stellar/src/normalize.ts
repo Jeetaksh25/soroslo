@@ -44,9 +44,7 @@ function normalizeNative(value: unknown): NormalizedValue {
 
   if (typeof value === "object" && value !== null) {
     const result: Record<string, NormalizedValue> = {};
-    for (const [key, child] of Object.entries(value).sort(([a], [b]) =>
-      a.localeCompare(b)
-    )) {
+    for (const [key, child] of Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) {
       result[key] = normalizeNative(child);
     }
     return result;
@@ -63,8 +61,7 @@ export function normalizeScVal(value: xdr.ScVal): NormalizedValue {
     }));
 
     const stringEntries = entries.filter(
-      (entry): entry is { key: string; value: NormalizedValue } =>
-        typeof entry.key === "string"
+      (entry): entry is { key: string; value: NormalizedValue } => typeof entry.key === "string"
     );
 
     if (

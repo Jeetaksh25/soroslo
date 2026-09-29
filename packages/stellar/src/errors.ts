@@ -77,11 +77,11 @@ export function classifyObserverError(error: unknown): StellarObserverError {
   }
 
   if (status !== undefined && status >= 500) {
-    return new StellarObserverError(
-      "upstream_unavailable",
-      `Stellar RPC returned HTTP ${status}`,
-      { retryable: true, status, cause: error }
-    );
+    return new StellarObserverError("upstream_unavailable", `Stellar RPC returned HTTP ${status}`, {
+      retryable: true,
+      status,
+      cause: error
+    });
   }
 
   if (

@@ -1,10 +1,6 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import { rpc, type Transaction } from "@stellar/stellar-sdk";
-import {
-  StellarObserverError,
-  classifyObserverError,
-  type ObserverErrorCode
-} from "./errors.js";
+import { StellarObserverError, classifyObserverError, type ObserverErrorCode } from "./errors.js";
 import type { ResolvedNetworkConfig } from "./network.js";
 
 export interface RpcRetryOptions {
@@ -83,19 +79,13 @@ export class StellarRpcClient {
         }
 
         await sleep(
-          delayForAttempt(
-            attempt,
-            this.retry.baseDelayMs,
-            this.retry.maxDelayMs,
-            this.retry.random
-          )
+          delayForAttempt(attempt, this.retry.baseDelayMs, this.retry.maxDelayMs, this.retry.random)
         );
       }
     }
 
     throw (
-      lastError ??
-      new StellarObserverError("internal_error", "RPC retry loop exited unexpectedly")
+      lastError ?? new StellarObserverError("internal_error", "RPC retry loop exited unexpectedly")
     );
   }
 
@@ -128,7 +118,9 @@ export class StellarRpcClient {
     return identity;
   }
 
-  async simulateTransaction(transaction: Transaction): Promise<rpc.Api.SimulateTransactionResponse> {
+  async simulateTransaction(
+    transaction: Transaction
+  ): Promise<rpc.Api.SimulateTransactionResponse> {
     await this.verifyNetwork();
     return this.execute(() => this.server.simulateTransaction(transaction));
   }

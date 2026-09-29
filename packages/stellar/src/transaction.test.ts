@@ -1,13 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Networks, xdr } from "@stellar/stellar-sdk";
-import {
-  NULL_SIMULATION_ACCOUNT,
-  buildSimulationTransaction
-} from "./transaction.js";
+import { NULL_SIMULATION_ACCOUNT, buildSimulationTransaction } from "./transaction.js";
 
-const CONTRACT_ID =
-  "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM";
+const CONTRACT_ID = "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM";
 
 test("builds a one-operation simulation transaction without a secret key", () => {
   const transaction = buildSimulationTransaction({

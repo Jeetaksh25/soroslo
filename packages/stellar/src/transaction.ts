@@ -7,8 +7,7 @@ import {
   type xdr
 } from "@stellar/stellar-sdk";
 
-export const NULL_SIMULATION_ACCOUNT =
-  "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+export const NULL_SIMULATION_ACCOUNT = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
 export interface SimulationTransactionInput {
   contractId: string;
@@ -26,10 +25,7 @@ export function buildSimulationTransaction(input: SimulationTransactionInput): T
   }
 
   const source = new Account(NULL_SIMULATION_ACCOUNT, "0");
-  const operation = new Contract(input.contractId).call(
-    input.functionName,
-    ...(input.args ?? [])
-  );
+  const operation = new Contract(input.contractId).call(input.functionName, ...(input.args ?? []));
 
   return new TransactionBuilder(source, {
     fee: BASE_FEE,

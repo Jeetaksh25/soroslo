@@ -10,10 +10,7 @@ test("normalizes primitive values", () => {
 });
 
 test("normalizes bytes as lowercase hex", () => {
-  assert.equal(
-    normalizeScVal(xdr.ScVal.scvBytes(Uint8Array.from([0xab, 0xcd, 0x01]))),
-    "abcd01"
-  );
+  assert.equal(normalizeScVal(xdr.ScVal.scvBytes(Uint8Array.from([0xab, 0xcd, 0x01]))), "abcd01");
 });
 
 test("normalizes string-key maps into deterministic objects", () => {
