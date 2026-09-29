@@ -1,8 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{
-    contract, contracterror, contractimpl, symbol_short, Env, Map, Symbol,
-};
+use soroban_sdk::{contract, contracterror, contractimpl, symbol_short, Env, Map, Symbol};
 
 #[contract]
 pub struct SoroSloFixture;
