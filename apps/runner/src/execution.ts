@@ -13,9 +13,11 @@ import { qualifiedCheckId, type PersistedRunInput, type SoroSloStorage } from "@
 
 export interface PersistedExecutionResult {
   runId: string;
+  finishedAt: string;
   result: CheckRunResult;
   incidentEvent: IncidentTransitionEvent;
   incidentId: string | null;
+  transitionIncidentId: string | null;
   slo: SloSnapshot | null;
 }
 
@@ -177,8 +179,10 @@ export async function runCheckAndPersist(options: {
   const transition = advanceIncidentState(runtime, result.state, policy);
 
   let activeIncidentId = runtime.activeIncidentId;
+  let transitionIncidentId: string | null = null;
   if (transition.event === "opened") {
     activeIncidentId = randomUUID();
+    transitionIncidentId = activeIncidentId;
     options.storage.openIncident({
       id: activeIncidentId,
       checkId,
@@ -188,6 +192,7 @@ export async function runCheckAndPersist(options: {
       summary: `${options.check.name} failed ${transition.next.consecutiveFailures} consecutive runs`
     });
   } else if (transition.event === "recovered" && activeIncidentId) {
+    transitionIncidentId = activeIncidentId;
     options.storage.recoverIncident({
       id: activeIncidentId,
       recoveredAt: finished.toISOString(),
@@ -214,9 +219,11 @@ export async function runCheckAndPersist(options: {
 
   return {
     runId,
+    finishedAt: finished.toISOString(),
     result,
     incidentEvent: transition.event,
     incidentId: activeIncidentId,
+    transitionIncidentId,
     slo
   };
 }

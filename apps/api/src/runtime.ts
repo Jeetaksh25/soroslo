@@ -1,6 +1,6 @@
 import type { SoroSloConfig } from "@soroslo/config";
 import { createStellarStepInvoker } from "@soroslo/probe-engine";
-import { runCheckAndPersist } from "@soroslo/runner";
+import { notifyExecutionTransition, runCheckAndPersist } from "@soroslo/runner";
 import { parseDurationMs } from "@soroslo/shared";
 import { StellarRpcClient, resolveNetworkConfig, type NetworkConfigInput } from "@soroslo/stellar";
 import type { SoroSloStorage } from "@soroslo/storage";
@@ -10,6 +10,8 @@ export function createDefaultManualRunHandler(options: {
   storage: SoroSloStorage;
   config: SoroSloConfig;
   configHash: string;
+  dashboardUrl?: string;
+  allowPrivateWebhookNetwork?: boolean;
 }): ManualRunHandler {
   const clients = new Map<string, StellarRpcClient>();
 
@@ -49,6 +51,22 @@ export function createDefaultManualRunHandler(options: {
       idempotencyKey: `manual:${requestId}`,
       timeoutMs
     });
+
+    try {
+      await notifyExecutionTransition({
+        storage: options.storage,
+        config: options.config,
+        serviceId,
+        check,
+        execution,
+        ...(options.dashboardUrl !== undefined ? { dashboardUrl: options.dashboardUrl } : {}),
+        ...(options.allowPrivateWebhookNetwork !== undefined
+          ? { allowPrivateNetwork: options.allowPrivateWebhookNetwork }
+          : {})
+      });
+    } catch {
+      // A notification-path failure must not rewrite an already persisted run result.
+    }
 
     return {
       runId: execution.runId,

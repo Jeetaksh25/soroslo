@@ -46,11 +46,13 @@ The authoritative v0.1 contract is [`docs/technical-spec-v0.1.md`](docs/technica
 
 ## M5 — Notifications and hardening
 
-- [ ] Signed webhook notifications
-- [ ] Retry and deduplication
-- [ ] Remote-bind authentication
-- [ ] Docker Compose
-- [ ] Playwright E2E
+- [x] Signed webhook notifications
+- [x] Retry and deduplication
+- [x] Runtime-only secrets and redaction boundaries
+- [x] Remote-bind authentication
+- [x] Operational deployment documentation
+- [x] Docker Compose
+- [x] Playwright E2E
 
 ## M6 — Ecosystem evidence
 

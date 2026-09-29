@@ -3,10 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Incident and notification domain boundary.",
+  "description": "Signed incident webhook delivery with bounded retry and deduplication.",
+  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test"
+    "test": "pnpm build && node --test dist/*.test.js"
   }
 }

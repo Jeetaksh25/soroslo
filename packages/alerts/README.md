@@ -1,5 +1,16 @@
 # @soroslo/alerts
 
-Incident and notification domain boundary.
+Signed generic webhook notifications for SoroSLO incidents.
 
-This package is an M0 boundary. Functional implementation lands in its owning milestone.
+M5 provides:
+
+- deterministic incident event IDs;
+- HMAC-SHA256 signatures over `timestamp.body`;
+- event-id and timestamp headers;
+- redirect refusal;
+- bounded retry with exponential backoff and jitter;
+- persistent delivery deduplication via the storage ledger interface;
+- per-attempt persistence hooks;
+- public-network webhook URL validation by default.
+
+Webhook secrets remain runtime-only configuration values and are never persisted in notification evidence.

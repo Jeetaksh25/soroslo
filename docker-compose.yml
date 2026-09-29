@@ -1,0 +1,69 @@
+services:
+  api:
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    environment:
+      SOROSLO_CONFIG_PATH: /config/soroslo.yml
+      SOROSLO_DB_PATH: /data/soroslo.sqlite
+      SOROSLO_API_HOST: 0.0.0.0
+      SOROSLO_API_PORT: 3001
+      SOROSLO_ADMIN_TOKEN: ${SOROSLO_ADMIN_TOKEN:?set SOROSLO_ADMIN_TOKEN}
+      SOROSLO_DASHBOARD_URL: ${SOROSLO_DASHBOARD_URL:-http://127.0.0.1:3000}
+      SOROSLO_ALLOW_PRIVATE_WEBHOOKS: ${SOROSLO_ALLOW_PRIVATE_WEBHOOKS:-false}
+    volumes:
+      - ./soroslo.yml:/config/soroslo.yml:ro
+      - soroslo-data:/data
+    ports:
+      - "${SOROSLO_BIND_ADDRESS:-127.0.0.1}:${SOROSLO_API_PORT:-3001}:3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/healthz',{headers:{authorization:'Bearer '+process.env.SOROSLO_ADMIN_TOKEN}}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  runner:
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    environment:
+      SOROSLO_CONFIG_PATH: /config/soroslo.yml
+      SOROSLO_DB_PATH: /data/soroslo.sqlite
+      SOROSLO_DASHBOARD_URL: ${SOROSLO_DASHBOARD_URL:-http://127.0.0.1:3000}
+      SOROSLO_ALLOW_PRIVATE_WEBHOOKS: ${SOROSLO_ALLOW_PRIVATE_WEBHOOKS:-false}
+      SOROSLO_RUNNER_CONCURRENCY: ${SOROSLO_RUNNER_CONCURRENCY:-4}
+      SOROSLO_RUNNER_TICK_MS: ${SOROSLO_RUNNER_TICK_MS:-5000}
+    volumes:
+      - ./soroslo.yml:/config/soroslo.yml:ro
+      - soroslo-data:/data
+    depends_on:
+      api:
+        condition: service_healthy
+
+  dashboard:
+    build:
+      context: .
+      target: dashboard
+    restart: unless-stopped
+    environment:
+      SOROSLO_API_URL: http://api:3001
+      SOROSLO_ADMIN_TOKEN: ${SOROSLO_ADMIN_TOKEN:?set SOROSLO_ADMIN_TOKEN}
+      SOROSLO_REQUIRE_AUTH: "true"
+      SOROSLO_COOKIE_SECURE: ${SOROSLO_COOKIE_SECURE:-false}
+    ports:
+      - "${SOROSLO_BIND_ADDRESS:-127.0.0.1}:${SOROSLO_DASHBOARD_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  soroslo-data:

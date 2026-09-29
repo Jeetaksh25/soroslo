@@ -128,6 +128,32 @@ CREATE TABLE check_runtime_state (
   updated_at TEXT NOT NULL
 ) STRICT;
 `
+  },
+  {
+    version: 2,
+    name: "notification-delivery-deduplication",
+    sql: `
+ALTER TABLE notification_attempts ADD COLUMN event_id TEXT;
+ALTER TABLE notification_attempts ADD COLUMN payload_hash TEXT;
+
+CREATE INDEX notification_attempts_event_idx
+  ON notification_attempts(event_id, channel_id, started_at);
+
+CREATE TABLE notification_events (
+  event_id TEXT NOT NULL,
+  channel_id TEXT NOT NULL,
+  incident_id TEXT NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+  payload_hash TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('delivering', 'delivered', 'failed')),
+  claimed_at TEXT NOT NULL,
+  finished_at TEXT,
+  last_error TEXT,
+  PRIMARY KEY(event_id, channel_id)
+) STRICT;
+
+CREATE INDEX notification_events_incident_idx
+  ON notification_events(incident_id, state, claimed_at DESC);
+`
   }
 ] as const;
 

@@ -1,5 +1,10 @@
 export const apiBaseUrl = process.env.SOROSLO_API_URL ?? "http://127.0.0.1:3001";
 
+export function apiRequestHeaders(): Record<string, string> {
+  const token = process.env.SOROSLO_ADMIN_TOKEN;
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
 export interface ServiceSummary {
   id: string;
   name: string;
@@ -118,7 +123,8 @@ export interface SloSnapshot {
 
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
-    cache: "no-store"
+    cache: "no-store",
+    headers: apiRequestHeaders()
   });
 
   if (!response.ok) {

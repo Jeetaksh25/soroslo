@@ -4,6 +4,7 @@ import { parseDurationMs } from "@soroslo/shared";
 import { calculateSloSnapshot } from "@soroslo/slo-engine";
 import { qualifiedCheckId, type SoroSloStorage } from "@soroslo/storage";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
+import { assertRemoteBindIsAuthenticated, requestHasBearerToken } from "./security.js";
 
 export interface ManualRunResponse {
   runId: string;
@@ -24,6 +25,8 @@ export interface ApiOptions {
   version?: string;
   manualRun?: ManualRunHandler;
   ready?: () => boolean;
+  adminToken?: string;
+  now?: () => Date;
 }
 
 interface CheckLocation {
@@ -64,6 +67,23 @@ export function buildApi(options: ApiOptions): FastifyInstance {
   const app = Fastify({
     logger: false,
     disableRequestLogging: true
+  });
+
+  app.addHook("onRequest", (request, reply, done) => {
+    if (!options.adminToken) {
+      done();
+      return;
+    }
+
+    if (!requestHasBearerToken(request, options.adminToken)) {
+      void reply.header("www-authenticate", 'Bearer realm="SoroSLO"').code(401).send({
+        error: "unauthorized",
+        message: "A valid SoroSLO administrator bearer token is required"
+      });
+      return;
+    }
+
+    done();
   });
 
   app.setErrorHandler((error, _request, reply) => {
@@ -170,7 +190,7 @@ export function buildApi(options: ApiOptions): FastifyInstance {
       };
     }
 
-    const now = new Date();
+    const now = options.now?.() ?? new Date();
     const since = new Date(
       now.getTime() - parseDurationMs(configured.check.slo.window)
     ).toISOString();
@@ -238,9 +258,12 @@ export function buildApi(options: ApiOptions): FastifyInstance {
 export async function startApi(
   options: ApiOptions & { host?: string; port?: number }
 ): Promise<FastifyInstance> {
+  const host = options.host ?? "127.0.0.1";
+  assertRemoteBindIsAuthenticated(host, options.adminToken);
+
   const app = buildApi(options);
   await app.listen({
-    host: options.host ?? "127.0.0.1",
+    host,
     port: options.port ?? 3001
   });
   return app;

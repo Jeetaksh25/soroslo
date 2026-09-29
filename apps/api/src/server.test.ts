@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { SoroSloConfig } from "@soroslo/config";
 import { SoroSloStorage } from "@soroslo/storage";
-import { buildApi } from "./server.js";
+import { buildApi, startApi } from "./server.js";
 
 const CONTRACT_ID = "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
 
@@ -99,7 +99,12 @@ void test("serves operational and service read endpoints", async () => {
 
 void test("returns run details and rolling SLO state", async () => {
   const storage = seededStorage();
-  const app = buildApi({ storage, config, configHash: "config-a" });
+  const app = buildApi({
+    storage,
+    config,
+    configHash: "config-a",
+    now: () => new Date("2026-09-29T18:30:00.000Z")
+  });
 
   try {
     const run = await app.inject({ method: "GET", url: "/api/v1/runs/run-1" });
@@ -175,6 +180,56 @@ void test("invalid list limits return a structured 400", async () => {
     assert.equal(responseBody.error, "bad_request");
   } finally {
     await app.close();
+    storage.close();
+  }
+});
+
+void test("protects the API with an administrator bearer token when configured", async () => {
+  const storage = seededStorage();
+  const app = buildApi({
+    storage,
+    config,
+    configHash: "config-a",
+    adminToken: "correct-horse-battery-staple"
+  });
+
+  try {
+    const unauthorized = await app.inject({
+      method: "GET",
+      url: "/api/v1/services"
+    });
+    assert.equal(unauthorized.statusCode, 401);
+    assert.equal(unauthorized.headers["www-authenticate"], 'Bearer realm="SoroSLO"');
+
+    const authorized = await app.inject({
+      method: "GET",
+      url: "/api/v1/services",
+      headers: {
+        authorization: "Bearer correct-horse-battery-staple"
+      }
+    });
+    assert.equal(authorized.statusCode, 200);
+  } finally {
+    await app.close();
+    storage.close();
+  }
+});
+
+void test("refuses a non-loopback server bind without an administrator token", async () => {
+  const storage = seededStorage();
+  try {
+    await assert.rejects(
+      () =>
+        startApi({
+          storage,
+          config,
+          configHash: "config-a",
+          host: "0.0.0.0",
+          port: 0
+        }),
+      /Remote API bind requires/
+    );
+  } finally {
     storage.close();
   }
 });

@@ -108,7 +108,7 @@ nav a:hover,
   margin-bottom: 36px;
 }
 .split-heading {
-  align-items: end;
+  align-items: flex-end;
 }
 .eyebrow {
   margin: 0 0 8px;
@@ -189,7 +189,7 @@ h3 {
 .section-title {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: flex-end;
   gap: 20px;
   margin-bottom: 15px;
 }
@@ -460,4 +460,43 @@ pre {
   .assertion-row {
     grid-template-columns: auto 1fr;
   }
+}
+
+.login-shell {
+  min-height: calc(100vh - 200px);
+  display: grid;
+  place-items: center;
+}
+.login-card {
+  width: min(100%, 460px);
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--panel);
+}
+.login-card h1 {
+  font-size: 38px;
+}
+.login-card form {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+.login-card label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.login-card input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #07100f;
+  color: var(--text);
+  padding: 12px 13px;
+  font: inherit;
+  outline: none;
+}
+.login-card input:focus {
+  border-color: rgba(89, 224, 178, 0.65);
 }
