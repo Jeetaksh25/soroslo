@@ -1,0 +1,39 @@
+name: M3 bootstrap
+
+on:
+  push:
+    branches:
+      - feat/m3-persistence-reliability
+    paths:
+      - ".github/workflows/m3-bootstrap.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Update workspace lockfile
+        run: pnpm install --no-frozen-lockfile
+      - name: Format M3 files
+        run: pnpm exec prettier --write packages/storage packages/slo-engine apps/runner
+      - name: Commit generated updates
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml packages/storage packages/slo-engine apps/runner
+          git commit -m "chore: finalize M3 dependencies and formatting"
+          git push
