@@ -72,13 +72,15 @@ void test("creates deterministic event IDs and webhook signatures", () => {
 void test("retries retryable webhook failures and records attempts", async () => {
   const ledger = new MemoryLedger();
   let calls = 0;
-  const fetchImpl: typeof fetch = async (_input, init) => {
+  const fetchImpl: typeof fetch = (_input, init) => {
     calls += 1;
     assert.equal(init?.redirect, "manual");
     const headers = new Headers(init?.headers);
     assert.match(headers.get("x-soroslo-signature") ?? "", /^sha256=[0-9a-f]{64}$/);
     assert.equal(headers.get("x-soroslo-event-id"), sampleEvent().eventId);
-    return new Response(calls < 3 ? "" : null, { status: calls < 3 ? 503 : 204 });
+    return Promise.resolve(
+      new Response(calls < 3 ? "" : null, { status: calls < 3 ? 503 : 204 })
+    );
   };
 
   const result = await deliverWebhookEvent({
@@ -106,9 +108,9 @@ void test("retries retryable webhook failures and records attempts", async () =>
 void test("deduplicates an event after successful delivery", async () => {
   const ledger = new MemoryLedger();
   let calls = 0;
-  const fetchImpl: typeof fetch = async () => {
+  const fetchImpl: typeof fetch = () => {
     calls += 1;
-    return new Response(null, { status: 204 });
+    return Promise.resolve(new Response(null, { status: 204 }));
   };
 
   const options = {
@@ -136,9 +138,9 @@ void test("does not retry deterministic 4xx responses", async () => {
     event: sampleEvent(),
     channels: [{ id: "ops", url: "https://127.0.0.1/hook", secret: "secret" }],
     ledger,
-    fetchImpl: async () => {
+    fetchImpl: () => {
       calls += 1;
-      return new Response("", { status: 400 });
+      return Promise.resolve(new Response("", { status: 400 }));
     },
     allowPrivateNetwork: true,
     maxAttempts: 3,
