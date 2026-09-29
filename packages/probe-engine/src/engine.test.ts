@@ -45,14 +45,14 @@ function evidence(result: SimulationEvidence["result"], ledger = 100): Simulatio
 void test("executes ordered steps and resolves a prior-step result into a typed argument", async () => {
   const invocations: unknown[] = [];
   const invoker: StepInvoker = {
-    async invoke(input) {
+    invoke(input) {
       invocations.push(input);
       if (input.functionName === "latest_price") {
-        return evidence({ value: "7" }, 101);
+        return Promise.resolve(evidence({ value: "7" }, 101));
       }
 
       assert.equal(scValToNative(input.args[0]!), 7n);
-      return evidence("14", 102);
+      return Promise.resolve(evidence("14", 102));
     }
   };
 
@@ -67,9 +67,9 @@ void test("executes ordered steps and resolves a prior-step result into a typed 
 void test("fails fast on deterministic assertion failure", async () => {
   let calls = 0;
   const invoker: StepInvoker = {
-    async invoke() {
+    invoke() {
       calls += 1;
-      return evidence({ value: "0" });
+      return Promise.resolve(evidence({ value: "0" }));
     }
   };
 
@@ -83,8 +83,10 @@ void test("fails fast on deterministic assertion failure", async () => {
 
 void test("classifies RPC failures as observer errors", async () => {
   const invoker: StepInvoker = {
-    async invoke() {
-      throw new StellarObserverError("timeout", "RPC timed out", { retryable: true });
+    invoke() {
+      return Promise.reject(
+        new StellarObserverError("timeout", "RPC timed out", { retryable: true })
+      );
     }
   };
 
@@ -97,15 +99,15 @@ void test("classifies RPC failures as observer errors", async () => {
 
 void test("classifies deterministic Soroban simulation errors as service failures", async () => {
   const invoker: StepInvoker = {
-    async invoke() {
-      return {
+    invoke() {
+      return Promise.resolve({
         status: "simulation_error",
         latestLedger: 100,
         endpointFingerprint: "rpc123",
         elapsedMs: 3,
         diagnosticEventCount: 1,
         error: "Error(Contract, #1)"
-      };
+      });
     }
   };
 
@@ -116,9 +118,11 @@ void test("classifies deterministic Soroban simulation errors as service failure
 
 void test("fails when a referenced field disappears from an earlier result", async () => {
   const invoker: StepInvoker = {
-    async invoke(input) {
-      if (input.functionName === "latest_price") return evidence({ value: "7" });
-      return evidence("10");
+    invoke(input) {
+      if (input.functionName === "latest_price") {
+        return Promise.resolve(evidence({ value: "7" }));
+      }
+      return Promise.resolve(evidence("10"));
     }
   };
 
