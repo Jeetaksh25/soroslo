@@ -9,7 +9,7 @@ import {
   type IncidentTransitionEvent,
   type SloSnapshot
 } from "@soroslo/slo-engine";
-import { SoroSloStorage, qualifiedCheckId, type PersistedRunInput } from "@soroslo/storage";
+import { qualifiedCheckId, type PersistedRunInput, type SoroSloStorage } from "@soroslo/storage";
 
 export interface PersistedExecutionResult {
   runId: string;
