@@ -1,8 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function ManualRunButton({ checkId }: { checkId: string }) {
+  const router = useRouter();
   const [state, setState] = useState<"idle" | "running" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -26,7 +28,7 @@ export function ManualRunButton({ checkId }: { checkId: string }) {
 
       setState("done");
       setMessage(`Run ${body.runId ?? ""} completed as ${body.state ?? "unknown"}.`);
-      window.setTimeout(() => window.location.reload(), 700);
+      router.refresh();
     } catch (error) {
       setState("error");
       setMessage(error instanceof Error ? error.message : String(error));
