@@ -223,7 +223,7 @@ export class RestartSafeScheduler {
       const next = nextFutureSchedule(
         new Date(scheduledMs + intervalMs),
         intervalMs,
-        new Date(Math.max(now.getTime(), Date.now()))
+        now
       );
       this.store.completeSchedule(
         checkId,
