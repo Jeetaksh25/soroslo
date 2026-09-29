@@ -23,6 +23,7 @@
     "@soroslo/shared": "workspace:*",
     "@soroslo/slo-engine": "workspace:*",
     "@soroslo/storage": "workspace:*",
-    "@soroslo/stellar": "workspace:*"
+    "@soroslo/stellar": "workspace:*",
+    "@soroslo/alerts": "workspace:*"
   }
 }
