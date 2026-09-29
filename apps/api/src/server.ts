@@ -26,6 +26,7 @@ export interface ApiOptions {
   manualRun?: ManualRunHandler;
   ready?: () => boolean;
   adminToken?: string;
+  now?: () => Date;
 }
 
 interface CheckLocation {
@@ -189,7 +190,7 @@ export function buildApi(options: ApiOptions): FastifyInstance {
       };
     }
 
-    const now = new Date();
+    const now = options.now?.() ?? new Date();
     const since = new Date(
       now.getTime() - parseDurationMs(configured.check.slo.window)
     ).toISOString();
