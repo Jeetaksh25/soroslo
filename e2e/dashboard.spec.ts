@@ -15,7 +15,7 @@ test("overview exposes reliability state and SLO evidence", async ({ page }) => 
 test("check view can trigger a manual run through the same-origin proxy", async ({ page }) => {
   await page.goto("/checks/payments%3Ahealth");
 
-  await expect(page.getByRole("heading", { name: "Health" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Health", exact: true })).toBeVisible();
   await expect(page.getByText("99.50%")).toBeVisible();
 
   await page.getByRole("button", { name: "Run check now" }).click();
