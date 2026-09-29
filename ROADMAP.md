@@ -39,10 +39,10 @@ The authoritative v0.1 contract is [`docs/technical-spec-v0.1.md`](docs/technica
 
 ## M4 — Product surfaces
 
-- [ ] API
-- [ ] Dashboard
-- [ ] Check/run/incident views
-- [ ] Manual run trigger
+- [x] API
+- [x] Dashboard
+- [x] Check/run/incident views
+- [x] Manual run trigger
 
 ## M5 — Notifications and hardening
 
