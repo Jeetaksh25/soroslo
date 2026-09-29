@@ -38,7 +38,7 @@ function evidence(result: SimulationEvidence["result"], ledger = 100): Simulatio
     endpointFingerprint: "rpc123",
     elapsedMs: 4,
     diagnosticEventCount: 0,
-    result
+    ...(result !== undefined ? { result } : {})
   };
 }
 
