@@ -4,7 +4,8 @@ export async function POST(
   _request: Request,
   context: { params: Promise<{ checkId: string }> }
 ): Promise<Response> {
-  const { checkId } = await context.params;
+  const { checkId: encodedCheckId } = await context.params;
+  const checkId = decodeURIComponent(encodedCheckId);
   const response = await fetch(`${apiBaseUrl}/api/v1/checks/${encodeURIComponent(checkId)}/run`, {
     method: "POST",
     cache: "no-store",
