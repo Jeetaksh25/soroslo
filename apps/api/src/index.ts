@@ -1,3 +1,4 @@
+export { createDefaultManualRunHandler } from "./runtime.js";
 export { buildApi, startApi } from "./server.js";
 export type {
   ApiOptions,
