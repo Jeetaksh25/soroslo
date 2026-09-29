@@ -9,11 +9,7 @@ function JsonBlock({ value }: { value: unknown }) {
   return <pre>{JSON.stringify(value, null, 2)}</pre>;
 }
 
-export default async function RunPage({
-  params
-}: {
-  params: Promise<{ runId: string }>;
-}) {
+export default async function RunPage({ params }: { params: Promise<{ runId: string }> }) {
   const { runId } = await params;
   const run = await getRun(runId);
 
@@ -21,7 +17,9 @@ export default async function RunPage({
     <>
       <section className="page-heading">
         <div>
-          <Link href={`/checks/${encodeURIComponent(run.checkId)}`} className="back-link">← Check</Link>
+          <Link href={`/checks/${encodeURIComponent(run.checkId)}`} className="back-link">
+            ← Check
+          </Link>
           <p className="eyebrow">Run evidence</p>
           <h1>{run.id}</h1>
           <div className="run-heading-meta">
@@ -32,12 +30,34 @@ export default async function RunPage({
       </section>
 
       <section className="detail-grid section-block compact">
-        <div><span>Config hash</span><strong><code>{run.configHash}</code></strong></div>
-        <div><span>Observed ledger</span><strong>{run.observedLedger ?? "—"}</strong></div>
-        <div><span>RPC fingerprint</span><strong><code>{run.rpcEndpointFingerprint ?? "—"}</code></strong></div>
-        <div><span>Scheduled at</span><strong>{formatDate(run.scheduledAt)}</strong></div>
-        <div><span>Started</span><strong>{formatDate(run.startedAt)}</strong></div>
-        <div><span>Finished</span><strong>{formatDate(run.finishedAt)}</strong></div>
+        <div>
+          <span>Config hash</span>
+          <strong>
+            <code>{run.configHash}</code>
+          </strong>
+        </div>
+        <div>
+          <span>Observed ledger</span>
+          <strong>{run.observedLedger ?? "—"}</strong>
+        </div>
+        <div>
+          <span>RPC fingerprint</span>
+          <strong>
+            <code>{run.rpcEndpointFingerprint ?? "—"}</code>
+          </strong>
+        </div>
+        <div>
+          <span>Scheduled at</span>
+          <strong>{formatDate(run.scheduledAt)}</strong>
+        </div>
+        <div>
+          <span>Started</span>
+          <strong>{formatDate(run.startedAt)}</strong>
+        </div>
+        <div>
+          <span>Finished</span>
+          <strong>{formatDate(run.finishedAt)}</strong>
+        </div>
       </section>
 
       <section className="section-block">
@@ -54,7 +74,9 @@ export default async function RunPage({
               <div className="step-heading">
                 <div>
                   <span className="step-number">Step {step.ordinal + 1}</span>
-                  <h3>{step.stepId} · {step.functionName}</h3>
+                  <h3>
+                    {step.stepId} · {step.functionName}
+                  </h3>
                   <code>{step.contractId}</code>
                 </div>
                 <StatusPill value={step.state} />

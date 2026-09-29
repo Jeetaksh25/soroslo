@@ -549,7 +549,8 @@ export class SoroSloStorage {
 
   listServices(): ServiceSummary[] {
     return this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT
           s.id,
           s.name,
@@ -562,7 +563,8 @@ export class SoroSloStorage {
         LEFT JOIN checks c ON c.service_id = s.id
         GROUP BY s.id
         ORDER BY s.name ASC, s.id ASC
-      `)
+      `
+      )
       .all()
       .map((rawRow) => {
         const row = record(rawRow);
@@ -637,7 +639,8 @@ export class SoroSloStorage {
 
   getServiceDetail(serviceId: string): ServiceDetail | null {
     const rawRow = this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT
           s.id,
           s.name,
@@ -650,7 +653,8 @@ export class SoroSloStorage {
         LEFT JOIN checks c ON c.service_id = s.id
         WHERE s.id = ?
         GROUP BY s.id
-      `)
+      `
+      )
       .get(serviceId);
 
     if (rawRow === undefined) return null;
@@ -674,7 +678,8 @@ export class SoroSloStorage {
   listRuns(checkId: string, limit = 50, before?: string): RunSummary[] {
     const boundedLimit = Math.max(1, Math.min(200, Math.trunc(limit)));
     return this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT
           id, check_id, scheduled_at, started_at, finished_at, state,
           observed_ledger, rpc_endpoint_fingerprint, config_hash,
@@ -684,27 +689,31 @@ export class SoroSloStorage {
           AND (? IS NULL OR finished_at < ?)
         ORDER BY finished_at DESC, id DESC
         LIMIT ?
-      `)
+      `
+      )
       .all(checkId, before ?? null, before ?? null, boundedLimit)
       .map((rawRow) => this.toRunSummary(rawRow));
   }
 
   getRunDetail(runId: string): RunDetail | null {
     const rawRun = this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT
           id, check_id, scheduled_at, started_at, finished_at, state,
           observed_ledger, rpc_endpoint_fingerprint, config_hash,
           observer_error_code, observer_error_message
         FROM runs
         WHERE id = ?
-      `)
+      `
+      )
       .get(runId);
     if (rawRun === undefined) return null;
 
     const run = this.toRunSummary(rawRun);
     const steps = this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT
           id, step_id, ordinal, state, contract_id, function_name,
           result_json, raw_return_xdr, min_resource_fee, elapsed_ms,
@@ -712,20 +721,23 @@ export class SoroSloStorage {
         FROM step_results
         WHERE run_id = ?
         ORDER BY ordinal ASC
-      `)
+      `
+      )
       .all(runId)
       .map((rawStep) => {
         const row = record(rawStep);
         const stepResultId = requiredString(row.id, "id");
         const assertions: AssertionDetail[] = this.database
-          .prepare(`
+          .prepare(
+            `
             SELECT
               id, ordinal, path, operator, expected_json,
               observed_json, passed, reason
             FROM assertion_results
             WHERE step_result_id = ?
             ORDER BY ordinal ASC
-          `)
+          `
+          )
           .all(stepResultId)
           .map((rawAssertion) => {
             const assertion = record(rawAssertion);
@@ -763,14 +775,17 @@ export class SoroSloStorage {
     return { ...run, steps };
   }
 
-  listIncidents(options: {
-    state?: "open" | "recovered";
-    checkId?: string;
-    limit?: number;
-  } = {}): IncidentSummary[] {
+  listIncidents(
+    options: {
+      state?: "open" | "recovered";
+      checkId?: string;
+      limit?: number;
+    } = {}
+  ): IncidentSummary[] {
     const boundedLimit = Math.max(1, Math.min(200, Math.trunc(options.limit ?? 100)));
     return this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT
           i.id, i.check_id, i.opened_at, i.recovered_at, i.state,
           i.opening_run_id, i.recovery_run_id, i.failure_count, i.summary,
@@ -782,7 +797,8 @@ export class SoroSloStorage {
           AND (? IS NULL OR i.check_id = ?)
         ORDER BY i.opened_at DESC, i.id DESC
         LIMIT ?
-      `)
+      `
+      )
       .all(
         options.state ?? null,
         options.state ?? null,
@@ -811,14 +827,16 @@ export class SoroSloStorage {
 
   listNotificationAttempts(incidentId: string): NotificationAttemptSummary[] {
     return this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT
           id, incident_id, channel_id, event_type, attempt,
           started_at, finished_at, state, response_code, error_class
         FROM notification_attempts
         WHERE incident_id = ?
         ORDER BY started_at ASC, attempt ASC
-      `)
+      `
+      )
       .all(incidentId)
       .map((rawRow) => {
         const row = record(rawRow);
@@ -853,5 +871,4 @@ export class SoroSloStorage {
       observerErrorMessage: nullableString(row.observer_error_message)
     };
   }
-
 }

@@ -16,7 +16,9 @@ export default async function IncidentDetailPage({
     <>
       <section className="page-heading">
         <div>
-          <Link href="/incidents" className="back-link">← Incidents</Link>
+          <Link href="/incidents" className="back-link">
+            ← Incidents
+          </Link>
           <p className="eyebrow">Incident detail</p>
           <h1>{incident.summary}</h1>
           <div className="run-heading-meta">
@@ -27,10 +29,24 @@ export default async function IncidentDetailPage({
       </section>
 
       <section className="detail-grid section-block compact">
-        <div><span>Opened</span><strong>{formatDate(incident.openedAt)}</strong></div>
-        <div><span>Recovered</span><strong>{formatDate(incident.recoveredAt)}</strong></div>
-        <div><span>Failures at open</span><strong>{incident.failureCount}</strong></div>
-        <div><span>Incident ID</span><strong><code>{incident.id}</code></strong></div>
+        <div>
+          <span>Opened</span>
+          <strong>{formatDate(incident.openedAt)}</strong>
+        </div>
+        <div>
+          <span>Recovered</span>
+          <strong>{formatDate(incident.recoveredAt)}</strong>
+        </div>
+        <div>
+          <span>Failures at open</span>
+          <strong>{incident.failureCount}</strong>
+        </div>
+        <div>
+          <span>Incident ID</span>
+          <strong>
+            <code>{incident.id}</code>
+          </strong>
+        </div>
       </section>
 
       <section className="section-block">
@@ -93,7 +109,9 @@ export default async function IncidentDetailPage({
                   <td>{attempt.channelId}</td>
                   <td>{attempt.eventType}</td>
                   <td>{attempt.attempt}</td>
-                  <td><StatusPill value={attempt.state} /></td>
+                  <td>
+                    <StatusPill value={attempt.state} />
+                  </td>
                   <td>{formatDate(attempt.startedAt)}</td>
                   <td>{attempt.responseCode ?? attempt.errorClass ?? "—"}</td>
                 </tr>

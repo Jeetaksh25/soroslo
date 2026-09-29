@@ -3,18 +3,9 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { ManualRunButton } from "../../../components/manual-run-button";
 import { StatusPill } from "../../../components/status-pill";
-import {
-  formatDate,
-  formatPercent,
-  getCheck,
-  getSlo
-} from "../../../lib/api";
+import { formatDate, formatPercent, getCheck, getSlo } from "../../../lib/api";
 
-export default async function CheckPage({
-  params
-}: {
-  params: Promise<{ checkId: string }>;
-}) {
+export default async function CheckPage({ params }: { params: Promise<{ checkId: string }> }) {
   const { checkId } = await params;
   const [detail, slo] = await Promise.all([getCheck(checkId), getSlo(checkId)]);
 
@@ -22,7 +13,9 @@ export default async function CheckPage({
     <>
       <section className="page-heading split-heading">
         <div>
-          <Link href="/" className="back-link">← Overview</Link>
+          <Link href="/" className="back-link">
+            ← Overview
+          </Link>
           <p className="eyebrow">Check detail</p>
           <h1>{detail.check.name}</h1>
           <p className="lede">
@@ -35,11 +28,15 @@ export default async function CheckPage({
       <section className="metric-grid">
         <article className="metric-card">
           <span>Operational state</span>
-          <strong className="metric-status"><StatusPill value={detail.check.operationalState} /></strong>
+          <strong className="metric-status">
+            <StatusPill value={detail.check.operationalState} />
+          </strong>
         </article>
         <article className="metric-card">
           <span>Last run</span>
-          <strong className="metric-status"><StatusPill value={detail.check.lastRunState} /></strong>
+          <strong className="metric-status">
+            <StatusPill value={detail.check.lastRunState} />
+          </strong>
         </article>
         <article className="metric-card">
           <span>Observed SLI</span>
@@ -47,7 +44,9 @@ export default async function CheckPage({
         </article>
         <article className="metric-card">
           <span>SLO status</span>
-          <strong className="metric-status"><StatusPill value={slo?.status ?? "not configured"} /></strong>
+          <strong className="metric-status">
+            <StatusPill value={slo?.status ?? "not configured"} />
+          </strong>
         </article>
       </section>
 
@@ -61,14 +60,44 @@ export default async function CheckPage({
             <StatusPill value={slo.status} />
           </div>
           <div className="detail-grid">
-            <div><span>Target</span><strong>{slo.target.toFixed(2)}%</strong></div>
-            <div><span>Eligible runs</span><strong>{slo.eligibleRuns}</strong></div>
-            <div><span>Passing runs</span><strong>{slo.passingRuns}</strong></div>
-            <div><span>Service failures</span><strong>{slo.serviceFailures}</strong></div>
-            <div><span>Observer errors</span><strong>{slo.observerErrors}</strong></div>
-            <div><span>Data coverage</span><strong>{formatPercent(slo.dataCoverage)}</strong></div>
-            <div><span>Error budget used</span><strong>{slo.errorBudgetConsumptionRatio === null ? "—" : `${(slo.errorBudgetConsumptionRatio * 100).toFixed(1)}%`}</strong></div>
-            <div><span>Window</span><strong>{formatDate(slo.windowStart)} → {formatDate(slo.windowEnd)}</strong></div>
+            <div>
+              <span>Target</span>
+              <strong>{slo.target.toFixed(2)}%</strong>
+            </div>
+            <div>
+              <span>Eligible runs</span>
+              <strong>{slo.eligibleRuns}</strong>
+            </div>
+            <div>
+              <span>Passing runs</span>
+              <strong>{slo.passingRuns}</strong>
+            </div>
+            <div>
+              <span>Service failures</span>
+              <strong>{slo.serviceFailures}</strong>
+            </div>
+            <div>
+              <span>Observer errors</span>
+              <strong>{slo.observerErrors}</strong>
+            </div>
+            <div>
+              <span>Data coverage</span>
+              <strong>{formatPercent(slo.dataCoverage)}</strong>
+            </div>
+            <div>
+              <span>Error budget used</span>
+              <strong>
+                {slo.errorBudgetConsumptionRatio === null
+                  ? "—"
+                  : `${(slo.errorBudgetConsumptionRatio * 100).toFixed(1)}%`}
+              </strong>
+            </div>
+            <div>
+              <span>Window</span>
+              <strong>
+                {formatDate(slo.windowStart)} → {formatDate(slo.windowEnd)}
+              </strong>
+            </div>
           </div>
         </section>
       ) : null}
@@ -94,15 +123,27 @@ export default async function CheckPage({
             <tbody>
               {detail.recentRuns.map((run) => (
                 <tr key={run.id}>
-                  <td><StatusPill value={run.state} /></td>
+                  <td>
+                    <StatusPill value={run.state} />
+                  </td>
                   <td>{formatDate(run.finishedAt)}</td>
                   <td>{run.observedLedger ?? "—"}</td>
-                  <td><code>{run.rpcEndpointFingerprint ?? "—"}</code></td>
-                  <td><Link className="table-link" href={`/runs/${encodeURIComponent(run.id)}`}>Inspect</Link></td>
+                  <td>
+                    <code>{run.rpcEndpointFingerprint ?? "—"}</code>
+                  </td>
+                  <td>
+                    <Link className="table-link" href={`/runs/${encodeURIComponent(run.id)}`}>
+                      Inspect
+                    </Link>
+                  </td>
                 </tr>
               ))}
               {detail.recentRuns.length === 0 ? (
-                <tr><td colSpan={5} className="empty">No run evidence yet.</td></tr>
+                <tr>
+                  <td colSpan={5} className="empty">
+                    No run evidence yet.
+                  </td>
+                </tr>
               ) : null}
             </tbody>
           </table>
@@ -130,7 +171,9 @@ export default async function CheckPage({
               </div>
             </article>
           ))}
-          {detail.incidents.length === 0 ? <div className="empty-card">No incidents for this check.</div> : null}
+          {detail.incidents.length === 0 ? (
+            <div className="empty-card">No incidents for this check.</div>
+          ) : null}
         </div>
       </section>
     </>

@@ -7,7 +7,10 @@ export function StatusPill({ value }: StatusPillProps) {
   const tone =
     label === "pass" || label === "healthy" || label === "met" || label === "recovered"
       ? "good"
-      : label === "service_fail" || label === "incident_open" || label === "breached" || label === "open"
+      : label === "service_fail" ||
+          label === "incident_open" ||
+          label === "breached" ||
+          label === "open"
         ? "bad"
         : "warn";
 

@@ -14,7 +14,8 @@ export default async function IncidentsPage() {
           <p className="eyebrow">Incident history</p>
           <h1>Service incidents</h1>
           <p className="lede">
-            Incident state is driven only by service-failure/pass thresholds; observer errors do not open or recover incidents.
+            Incident state is driven only by service-failure/pass thresholds; observer errors do not
+            open or recover incidents.
           </p>
         </div>
       </section>
@@ -26,15 +27,22 @@ export default async function IncidentsPage() {
               <div>
                 <StatusPill value={incident.state} />
                 <h3>{incident.summary}</h3>
-                <p>{incident.serviceName ?? incident.serviceId} · {incident.checkName ?? incident.checkId}</p>
+                <p>
+                  {incident.serviceName ?? incident.serviceId} ·{" "}
+                  {incident.checkName ?? incident.checkId}
+                </p>
               </div>
               <div className="incident-meta">
                 <span>Opened {formatDate(incident.openedAt)}</span>
                 <span>Recovered {formatDate(incident.recoveredAt)}</span>
-                <Link href={`/runs/${encodeURIComponent(incident.openingRunId)}`}>Opening evidence</Link>
+                <Link href={`/runs/${encodeURIComponent(incident.openingRunId)}`}>
+                  Opening evidence
+                </Link>
                 <Link href={`/incidents/${encodeURIComponent(incident.id)}`}>Incident detail</Link>
                 {incident.recoveryRunId ? (
-                  <Link href={`/runs/${encodeURIComponent(incident.recoveryRunId)}`}>Recovery evidence</Link>
+                  <Link href={`/runs/${encodeURIComponent(incident.recoveryRunId)}`}>
+                    Recovery evidence
+                  </Link>
                 ) : null}
               </div>
             </article>

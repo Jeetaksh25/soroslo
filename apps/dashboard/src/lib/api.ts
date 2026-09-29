@@ -1,5 +1,4 @@
-export const apiBaseUrl =
-  process.env.SOROSLO_API_URL ?? "http://127.0.0.1:3001";
+export const apiBaseUrl = process.env.SOROSLO_API_URL ?? "http://127.0.0.1:3001";
 
 export interface ServiceSummary {
   id: string;
@@ -88,7 +87,6 @@ export interface IncidentSummary {
   serviceName?: string;
 }
 
-
 export interface NotificationAttemptSummary {
   id: string;
   incidentId: string;
@@ -162,9 +160,7 @@ export async function getSlo(checkId: string): Promise<SloSnapshot | null> {
 }
 
 export async function getRun(runId: string): Promise<RunDetail> {
-  const data = await getJson<{ run: RunDetail }>(
-    `/api/v1/runs/${encodeURIComponent(runId)}`
-  );
+  const data = await getJson<{ run: RunDetail }>(`/api/v1/runs/${encodeURIComponent(runId)}`);
   return data.run;
 }
 

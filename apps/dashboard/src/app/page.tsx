@@ -2,7 +2,14 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { StatusPill } from "../components/status-pill";
-import { formatDate, formatPercent, getIncidents, getService, getServices, getSlo } from "../lib/api";
+import {
+  formatDate,
+  formatPercent,
+  getIncidents,
+  getService,
+  getServices,
+  getSlo
+} from "../lib/api";
 
 export default async function OverviewPage() {
   const [services, incidents] = await Promise.all([getServices(), getIncidents()]);
@@ -24,7 +31,8 @@ export default async function OverviewPage() {
           <p className="eyebrow">Operational overview</p>
           <h1>Service reliability at a glance</h1>
           <p className="lede">
-            Live synthetic check state, recent evidence, and active incidents across your Soroban services.
+            Live synthetic check state, recent evidence, and active incidents across your Soroban
+            services.
           </p>
         </div>
       </section>
@@ -40,7 +48,9 @@ export default async function OverviewPage() {
         </article>
         <article className="metric-card">
           <span>Last run passing</span>
-          <strong>{passing}/{checks.length}</strong>
+          <strong>
+            {passing}/{checks.length}
+          </strong>
         </article>
         <article className="metric-card">
           <span>Active incidents</span>
@@ -80,16 +90,30 @@ export default async function OverviewPage() {
                   </td>
                   <td>{check.network}</td>
                   <td>{check.schedule}</td>
-                  <td><StatusPill value={check.operationalState} /></td>
-                  <td><StatusPill value={check.lastRunState} /></td>
-                  <td>{slo ? `${formatPercent(slo.observedSli)} / ${slo.target.toFixed(2)}%` : "—"}</td>
+                  <td>
+                    <StatusPill value={check.operationalState} />
+                  </td>
+                  <td>
+                    <StatusPill value={check.lastRunState} />
+                  </td>
+                  <td>
+                    {slo ? `${formatPercent(slo.observedSli)} / ${slo.target.toFixed(2)}%` : "—"}
+                  </td>
                   <td>{slo ? formatPercent(slo.dataCoverage) : "—"}</td>
-                  <td>{slo?.errorBudgetConsumptionRatio === null || slo === null ? "—" : `${(slo.errorBudgetConsumptionRatio * 100).toFixed(1)}%`}</td>
+                  <td>
+                    {slo?.errorBudgetConsumptionRatio === null || slo === null
+                      ? "—"
+                      : `${(slo.errorBudgetConsumptionRatio * 100).toFixed(1)}%`}
+                  </td>
                   <td>{formatDate(check.lastRunFinishedAt)}</td>
                 </tr>
               ))}
               {checkRows.length === 0 ? (
-                <tr><td colSpan={9} className="empty">No checks have been configured yet.</td></tr>
+                <tr>
+                  <td colSpan={9} className="empty">
+                    No checks have been configured yet.
+                  </td>
+                </tr>
               ) : null}
             </tbody>
           </table>
@@ -102,7 +126,9 @@ export default async function OverviewPage() {
             <p className="eyebrow">Incidents</p>
             <h2>Active incidents</h2>
           </div>
-          <Link href="/incidents" className="secondary-action">View incident history</Link>
+          <Link href="/incidents" className="secondary-action">
+            View incident history
+          </Link>
         </div>
         <div className="card-list">
           {activeIncidents.map((incident) => (
@@ -110,7 +136,10 @@ export default async function OverviewPage() {
               <div>
                 <StatusPill value={incident.state} />
                 <h3>{incident.summary}</h3>
-                <p>{incident.serviceName ?? incident.serviceId} · {incident.checkName ?? incident.checkId}</p>
+                <p>
+                  {incident.serviceName ?? incident.serviceId} ·{" "}
+                  {incident.checkName ?? incident.checkId}
+                </p>
               </div>
               <div className="incident-meta">
                 <span>Opened {formatDate(incident.openedAt)}</span>

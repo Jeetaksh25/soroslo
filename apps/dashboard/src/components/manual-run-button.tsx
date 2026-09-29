@@ -11,10 +11,9 @@ export function ManualRunButton({ checkId }: { checkId: string }) {
     setMessage("");
 
     try {
-      const response = await fetch(
-        `/api/manual-run/${encodeURIComponent(checkId)}`,
-        { method: "POST" }
-      );
+      const response = await fetch(`/api/manual-run/${encodeURIComponent(checkId)}`, {
+        method: "POST"
+      });
       const body = (await response.json()) as {
         runId?: string;
         state?: string;
@@ -39,7 +38,9 @@ export function ManualRunButton({ checkId }: { checkId: string }) {
       <button type="button" onClick={run} disabled={state === "running"}>
         {state === "running" ? "Running…" : "Run check now"}
       </button>
-      {message ? <span className={state === "error" ? "error-text" : "muted"}>{message}</span> : null}
+      {message ? (
+        <span className={state === "error" ? "error-text" : "muted"}>{message}</span>
+      ) : null}
     </div>
   );
 }

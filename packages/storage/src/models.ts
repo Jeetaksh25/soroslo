@@ -72,7 +72,6 @@ export interface StoredIncident {
   summary: string;
 }
 
-
 export interface ServiceSummary {
   id: string;
   name: string;

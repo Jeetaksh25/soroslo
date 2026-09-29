@@ -2,15 +2,8 @@ import { randomUUID } from "node:crypto";
 import type { CheckConfig, SoroSloConfig } from "@soroslo/config";
 import { parseDurationMs } from "@soroslo/shared";
 import { calculateSloSnapshot } from "@soroslo/slo-engine";
-import {
-  qualifiedCheckId,
-  type SoroSloStorage
-} from "@soroslo/storage";
-import Fastify, {
-  type FastifyInstance,
-  type FastifyReply,
-  type FastifyRequest
-} from "fastify";
+import { qualifiedCheckId, type SoroSloStorage } from "@soroslo/storage";
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 
 export interface ManualRunResponse {
   runId: string;
@@ -191,10 +184,7 @@ export function buildApi(options: ApiOptions): FastifyInstance {
 
   app.get("/api/v1/incidents", async (request) => {
     const query = request.query as Record<string, unknown>;
-    const state =
-      query.state === "open" || query.state === "recovered"
-        ? query.state
-        : undefined;
+    const state = query.state === "open" || query.state === "recovered" ? query.state : undefined;
     const checkId = typeof query.checkId === "string" ? query.checkId : undefined;
 
     return {

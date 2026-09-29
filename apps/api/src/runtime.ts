@@ -2,11 +2,7 @@ import type { SoroSloConfig } from "@soroslo/config";
 import { createStellarStepInvoker } from "@soroslo/probe-engine";
 import { runCheckAndPersist } from "@soroslo/runner";
 import { parseDurationMs } from "@soroslo/shared";
-import {
-  StellarRpcClient,
-  resolveNetworkConfig,
-  type NetworkConfigInput
-} from "@soroslo/stellar";
+import { StellarRpcClient, resolveNetworkConfig, type NetworkConfigInput } from "@soroslo/stellar";
 import type { SoroSloStorage } from "@soroslo/storage";
 import type { ManualRunHandler } from "./server.js";
 
@@ -42,9 +38,7 @@ export function createDefaultManualRunHandler(options: {
 
   return async ({ serviceId, check, requestId }) => {
     const client = clientFor(check.network);
-    const timeoutMs = parseDurationMs(
-      check.timeout ?? options.config.runtime.defaultTimeout
-    );
+    const timeoutMs = parseDurationMs(check.timeout ?? options.config.runtime.defaultTimeout);
 
     const execution = await runCheckAndPersist({
       storage: options.storage,
