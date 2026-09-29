@@ -44,6 +44,10 @@ async function executeWithDeadline(
   timeoutMs: number,
   observedAtMs: number
 ): Promise<CheckRunResult> {
+  if (!Number.isFinite(timeoutMs) || timeoutMs < 1) {
+    throw new RangeError("Check timeout must be at least 1ms");
+  }
+
   let timer: NodeJS.Timeout | undefined;
 
   try {
@@ -51,7 +55,6 @@ async function executeWithDeadline(
       executeCheck(check, invoker, { observedAtMs }),
       new Promise<CheckRunResult>((resolve) => {
         timer = setTimeout(() => resolve(observerTimeoutResult(check.id)), timeoutMs);
-        timer.unref();
       })
     ]);
   } finally {
