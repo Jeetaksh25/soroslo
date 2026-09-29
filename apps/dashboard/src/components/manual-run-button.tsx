@@ -35,7 +35,7 @@ export function ManualRunButton({ checkId }: { checkId: string }) {
 
   return (
     <div className="manual-run">
-      <button type="button" onClick={run} disabled={state === "running"}>
+      <button type="button" onClick={() => { void run(); }} disabled={state === "running"}>
         {state === "running" ? "Running…" : "Run check now"}
       </button>
       {message ? (
