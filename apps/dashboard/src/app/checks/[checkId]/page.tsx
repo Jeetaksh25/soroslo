@@ -6,7 +6,8 @@ import { StatusPill } from "../../../components/status-pill";
 import { formatDate, formatPercent, getCheck, getSlo } from "../../../lib/api";
 
 export default async function CheckPage({ params }: { params: Promise<{ checkId: string }> }) {
-  const { checkId } = await params;
+  const { checkId: encodedCheckId } = await params;
+  const checkId = decodeURIComponent(encodedCheckId);
   const [detail, slo] = await Promise.all([getCheck(checkId), getSlo(checkId)]);
 
   return (
