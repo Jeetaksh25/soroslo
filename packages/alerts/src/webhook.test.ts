@@ -81,7 +81,7 @@ void test("retries retryable webhook failures and records attempts", async () =>
     const headers = new Headers(init?.headers);
     assert.match(headers.get("x-soroslo-signature") ?? "", /^sha256=[0-9a-f]{64}$/);
     assert.equal(headers.get("x-soroslo-event-id"), sampleEvent().eventId);
-    return new Response("", { status: calls < 3 ? 503 : 204 });
+    return new Response(calls < 3 ? "" : null, { status: calls < 3 ? 503 : 204 });
   };
 
   const result = await deliverWebhookEvent({
@@ -111,7 +111,7 @@ void test("deduplicates an event after successful delivery", async () => {
   let calls = 0;
   const fetchImpl: typeof fetch = async () => {
     calls += 1;
-    return new Response("", { status: 204 });
+    return new Response(null, { status: 204 });
   };
 
   const options = {
