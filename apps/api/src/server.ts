@@ -81,11 +81,11 @@ export function buildApi(options: ApiOptions): FastifyInstance {
     });
   });
 
-  app.get("/healthz", async () => ({
+  app.get("/healthz", () => ({
     status: "ok"
   }));
 
-  app.get("/readyz", async (_request, reply) => {
+  app.get("/readyz", (_request, reply) => {
     const ready = options.ready?.() ?? true;
     if (!ready) {
       return reply.code(503).send({ status: "not_ready" });
@@ -93,13 +93,13 @@ export function buildApi(options: ApiOptions): FastifyInstance {
     return { status: "ready" };
   });
 
-  app.get("/api/v1/version", async () => ({
+  app.get("/api/v1/version", () => ({
     version: options.version ?? "0.0.0",
     configVersion: options.config.version,
     configHash: options.configHash
   }));
 
-  app.get("/api/v1/services", async () => ({
+  app.get("/api/v1/services", () => ({
     services: options.storage.listServices()
   }));
 
@@ -182,7 +182,7 @@ export function buildApi(options: ApiOptions): FastifyInstance {
     };
   });
 
-  app.get("/api/v1/incidents", async (request) => {
+  app.get("/api/v1/incidents", (request) => {
     const query = request.query as Record<string, unknown>;
     const state = query.state === "open" || query.state === "recovered" ? query.state : undefined;
     const checkId = typeof query.checkId === "string" ? query.checkId : undefined;
