@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { ManualRunButton } from "../../../components/manual-run-button";
 import { StatusPill } from "../../../components/status-pill";
