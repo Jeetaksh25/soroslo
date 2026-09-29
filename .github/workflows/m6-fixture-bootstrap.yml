@@ -28,7 +28,7 @@ jobs:
         run: cargo generate-lockfile --manifest-path contracts/fixtures/Cargo.toml
 
       - name: Format fixture
-        run: cargo fmt --manifest-path contracts/fixtures/Cargo.toml -- --check
+        run: cargo fmt --manifest-path contracts/fixtures/Cargo.toml
 
       - name: Test fixture
         run: cargo test --manifest-path contracts/fixtures/Cargo.toml
@@ -38,12 +38,12 @@ jobs:
 
       - name: Commit fixture lockfile
         run: |
-          if git diff --quiet -- contracts/fixtures/Cargo.lock; then
+          if git diff --quiet -- contracts/fixtures/Cargo.lock contracts/fixtures/src/lib.rs; then
             echo "No generated lockfile change."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add contracts/fixtures/Cargo.lock
+          git add contracts/fixtures/Cargo.lock contracts/fixtures/src/lib.rs
           git commit -m "chore: lock M6 fixture dependencies"
           git push
