@@ -1,0 +1,14 @@
+node_modules
+.pnpm-store
+.git
+.github
+.next
+**/.next
+dist
+**/dist
+coverage
+.env
+.env.*
+.soroslo
+*.sqlite
+*.sqlite3
