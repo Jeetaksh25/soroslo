@@ -5,7 +5,7 @@ import { NULL_SIMULATION_ACCOUNT, buildSimulationTransaction } from "./transacti
 
 const CONTRACT_ID = "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM";
 
-test("builds a one-operation simulation transaction without a secret key", () => {
+void test("builds a one-operation simulation transaction without a secret key", () => {
   const transaction = buildSimulationTransaction({
     contractId: CONTRACT_ID,
     functionName: "value",
@@ -18,7 +18,7 @@ test("builds a one-operation simulation transaction without a secret key", () =>
   assert.ok(transaction.toXDR().length > 0);
 });
 
-test("rejects invalid transaction timeouts", () => {
+void test("rejects invalid transaction timeouts", () => {
   assert.throws(
     () =>
       buildSimulationTransaction({
