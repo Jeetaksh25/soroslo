@@ -5,3 +5,5 @@ dist
 coverage
 *.sqlite
 *.sqlite3
+pnpm-lock.yaml
+docs/technical-spec-v0.1.md
