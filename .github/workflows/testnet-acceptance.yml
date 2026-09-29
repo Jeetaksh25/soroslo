@@ -75,7 +75,7 @@ jobs:
         env:
           CONTRACT_ID: ${{ steps.deploy.outputs.contract_id }}
         run: |
-          stellar contract invoke             --id "$CONTRACT_ID"             --network testnet             --             healthy
+          stellar contract invoke             --id "$CONTRACT_ID"             --source-account soroslo-acceptance             --network testnet             --             healthy
 
       - name: Run SoroSLO live acceptance
         env:
