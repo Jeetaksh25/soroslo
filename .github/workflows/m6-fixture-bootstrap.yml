@@ -41,12 +41,12 @@ jobs:
 
       - name: Commit fixture lockfile
         run: |
-          if git diff --quiet -- contracts/fixtures/Cargo.lock contracts/fixtures/src/lib.rs; then
-            echo "No generated lockfile change."
+          git add contracts/fixtures/Cargo.lock contracts/fixtures/src/lib.rs
+          if git diff --cached --quiet; then
+            echo "No generated fixture change."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add contracts/fixtures/Cargo.lock contracts/fixtures/src/lib.rs
           git commit -m "chore: lock M6 fixture dependencies"
           git push
