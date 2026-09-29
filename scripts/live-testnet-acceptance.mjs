@@ -2,11 +2,11 @@ import { writeFileSync } from "node:fs";
 import {
   createStellarStepInvoker,
   executeCheck
-} from "@soroslo/probe-engine";
+} from "../packages/probe-engine/dist/index.js";
 import {
   StellarRpcClient,
   resolveNetworkConfig
-} from "@soroslo/stellar";
+} from "../packages/stellar/dist/index.js";
 
 const contractId = process.env.SOROSLO_TESTNET_FIXTURE_CONTRACT;
 if (!contractId) {
