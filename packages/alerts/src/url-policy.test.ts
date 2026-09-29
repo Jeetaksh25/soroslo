@@ -1,9 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  assertWebhookTargetAllowed,
-  isPrivateAddress
-} from "./url-policy.js";
+import { assertWebhookTargetAllowed, isPrivateAddress } from "./url-policy.js";
 
 void test("recognizes common private, loopback, and link-local addresses", () => {
   for (const address of [

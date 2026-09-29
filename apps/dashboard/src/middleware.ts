@@ -20,8 +20,7 @@ async function sha256(value: string): Promise<string> {
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const authRequired =
-    process.env.SOROSLO_REQUIRE_AUTH === "true" ||
-    !isLoopbackHostname(request.nextUrl.hostname);
+    process.env.SOROSLO_REQUIRE_AUTH === "true" || !isLoopbackHostname(request.nextUrl.hostname);
 
   if (!authRequired) {
     return NextResponse.next();
