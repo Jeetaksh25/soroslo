@@ -105,7 +105,7 @@ const contractError = await executeCheck(
 
 const brokenConfig = resolveNetworkConfig({
   name: "unreachable-testnet",
-  rpcUrl: "http://127.0.0.1:9",
+  rpcUrl: "https://127.0.0.1:9",
   networkPassphrase: testnetConfig.networkPassphrase
 });
 const brokenClient = new StellarRpcClient(brokenConfig, {
