@@ -825,6 +825,154 @@ export class SoroSloStorage {
       });
   }
 
+
+  claimNotification(input: {
+    eventId: string;
+    channelId: string;
+    incidentId: string;
+    payloadHash: string;
+    claimedAt: string;
+    staleBefore: string;
+  }): boolean {
+    this.database.exec("BEGIN IMMEDIATE");
+    try {
+      const rawRow = this.database
+        .prepare(`
+          SELECT state, payload_hash, claimed_at
+          FROM notification_events
+          WHERE event_id = ? AND channel_id = ?
+        `)
+        .get(input.eventId, input.channelId);
+
+      if (rawRow === undefined) {
+        this.database
+          .prepare(`
+            INSERT INTO notification_events(
+              event_id, channel_id, incident_id, payload_hash,
+              state, claimed_at, finished_at, last_error
+            )
+            VALUES (?, ?, ?, ?, 'delivering', ?, NULL, NULL)
+          `)
+          .run(
+            input.eventId,
+            input.channelId,
+            input.incidentId,
+            input.payloadHash,
+            input.claimedAt
+          );
+        this.database.exec("COMMIT");
+        return true;
+      }
+
+      const row = record(rawRow);
+      const state = requiredString(row.state, "state");
+      const payloadHash = requiredString(row.payload_hash, "payload_hash");
+      const claimedAt = requiredString(row.claimed_at, "claimed_at");
+
+      if (payloadHash !== input.payloadHash) {
+        throw new Error(
+          `Notification event collision for ${input.eventId}/${input.channelId}`
+        );
+      }
+
+      if (state === "delivered") {
+        this.database.exec("COMMIT");
+        return false;
+      }
+
+      if (state === "delivering" && claimedAt > input.staleBefore) {
+        this.database.exec("COMMIT");
+        return false;
+      }
+
+      this.database
+        .prepare(`
+          UPDATE notification_events
+          SET incident_id = ?,
+              state = 'delivering',
+              claimed_at = ?,
+              finished_at = NULL,
+              last_error = NULL
+          WHERE event_id = ? AND channel_id = ?
+        `)
+        .run(
+          input.incidentId,
+          input.claimedAt,
+          input.eventId,
+          input.channelId
+        );
+
+      this.database.exec("COMMIT");
+      return true;
+    } catch (error) {
+      this.database.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
+  recordNotificationAttempt(input: {
+    id: string;
+    eventId: string;
+    incidentId: string;
+    channelId: string;
+    eventType: string;
+    payloadHash: string;
+    attempt: number;
+    startedAt: string;
+    finishedAt: string;
+    state: "delivered" | "retrying" | "failed";
+    responseCode?: number;
+    errorClass?: string;
+  }): void {
+    this.database
+      .prepare(`
+        INSERT INTO notification_attempts(
+          id, incident_id, channel_id, event_type, attempt,
+          started_at, finished_at, state, response_code, error_class,
+          event_id, payload_hash
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `)
+      .run(
+        input.id,
+        input.incidentId,
+        input.channelId,
+        input.eventType,
+        input.attempt,
+        input.startedAt,
+        input.finishedAt,
+        input.state,
+        input.responseCode ?? null,
+        input.errorClass ?? null,
+        input.eventId,
+        input.payloadHash
+      );
+  }
+
+  completeNotification(input: {
+    eventId: string;
+    channelId: string;
+    state: "delivered" | "failed";
+    finishedAt: string;
+    lastError?: string;
+  }): void {
+    this.database
+      .prepare(`
+        UPDATE notification_events
+        SET state = ?,
+            finished_at = ?,
+            last_error = ?
+        WHERE event_id = ? AND channel_id = ?
+      `)
+      .run(
+        input.state,
+        input.finishedAt,
+        input.lastError ?? null,
+        input.eventId,
+        input.channelId
+      );
+  }
+
   listNotificationAttempts(incidentId: string): NotificationAttemptSummary[] {
     return this.database
       .prepare(
