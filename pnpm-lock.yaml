@@ -37,7 +37,26 @@ importers:
 
   apps/dashboard: {}
 
-  apps/runner: {}
+  apps/runner:
+    dependencies:
+      '@soroslo/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@soroslo/probe-engine':
+        specifier: workspace:*
+        version: link:../../packages/probe-engine
+      '@soroslo/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@soroslo/slo-engine':
+        specifier: workspace:*
+        version: link:../../packages/slo-engine
+      '@soroslo/stellar':
+        specifier: workspace:*
+        version: link:../../packages/stellar
+      '@soroslo/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
 
   cli: {}
 
@@ -84,7 +103,11 @@ importers:
 
   packages/shared: {}
 
-  packages/slo-engine: {}
+  packages/slo-engine:
+    dependencies:
+      '@soroslo/shared':
+        specifier: workspace:*
+        version: link:../shared
 
   packages/stellar:
     dependencies:
@@ -92,7 +115,17 @@ importers:
         specifier: 17.2.0
         version: 17.2.0
 
-  packages/storage: {}
+  packages/storage:
+    dependencies:
+      '@soroslo/config':
+        specifier: workspace:*
+        version: link:../config
+      '@soroslo/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@soroslo/slo-engine':
+        specifier: workspace:*
+        version: link:../slo-engine
 
 packages:
 

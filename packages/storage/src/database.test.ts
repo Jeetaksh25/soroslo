@@ -57,9 +57,9 @@ void test("migrates and synchronizes services/checks idempotently", () => {
     const migrationCount = storage.database
       .prepare("SELECT COUNT(*) AS count FROM schema_migrations")
       .get() as { count: number };
-    const checkCount = storage.database
-      .prepare("SELECT COUNT(*) AS count FROM checks")
-      .get() as { count: number };
+    const checkCount = storage.database.prepare("SELECT COUNT(*) AS count FROM checks").get() as {
+      count: number;
+    };
 
     assert.equal(migrationCount.count, 1);
     assert.equal(checkCount.count, 1);

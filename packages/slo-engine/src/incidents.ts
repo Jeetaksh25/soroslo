@@ -1,10 +1,6 @@
 import type { RunState } from "@soroslo/shared";
 
-export type OperationalState =
-  | "healthy"
-  | "pending_failure"
-  | "incident_open"
-  | "pending_recovery";
+export type OperationalState = "healthy" | "pending_failure" | "incident_open" | "pending_recovery";
 
 export interface IncidentPolicy {
   failuresToOpen: number;

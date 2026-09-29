@@ -90,8 +90,7 @@ export function calculateSloSnapshot(
   const dataCoverage = percentage(eligibleRuns, monitorSamples);
   const observerErrorRate = percentage(observerErrors, monitorSamples);
   const allowedFailureFraction = 1 - policy.target / 100;
-  const consumedFailureFraction =
-    eligibleRuns === 0 ? null : serviceFailures / eligibleRuns;
+  const consumedFailureFraction = eligibleRuns === 0 ? null : serviceFailures / eligibleRuns;
 
   let errorBudgetConsumptionRatio: number | null = null;
   if (consumedFailureFraction !== null) {

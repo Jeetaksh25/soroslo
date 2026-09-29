@@ -143,19 +143,11 @@ export class RestartSafeScheduler {
     this.leaseMs = options.leaseMs ?? 60_000;
   }
 
-  async tick(
-    checks: readonly ScheduledCheck[],
-    now = new Date()
-  ): Promise<SchedulerTickResult[]> {
-    return mapWithConcurrency(checks, this.concurrency, (check) =>
-      this.tickCheck(check, now)
-    );
+  async tick(checks: readonly ScheduledCheck[], now = new Date()): Promise<SchedulerTickResult[]> {
+    return mapWithConcurrency(checks, this.concurrency, (check) => this.tickCheck(check, now));
   }
 
-  private async tickCheck(
-    scheduledCheck: ScheduledCheck,
-    now: Date
-  ): Promise<SchedulerTickResult> {
+  private async tickCheck(scheduledCheck: ScheduledCheck, now: Date): Promise<SchedulerTickResult> {
     const checkId = qualifiedCheckId(scheduledCheck.serviceId, scheduledCheck.check.id);
     const intervalMs = parseDurationMs(scheduledCheck.check.every);
     const nowIso = now.toISOString();
@@ -220,17 +212,8 @@ export class RestartSafeScheduler {
 
     try {
       await this.executor(context);
-      const next = nextFutureSchedule(
-        new Date(scheduledMs + intervalMs),
-        intervalMs,
-        now
-      );
-      this.store.completeSchedule(
-        checkId,
-        state.nextScheduledAt,
-        next,
-        this.ownerId
-      );
+      const next = nextFutureSchedule(new Date(scheduledMs + intervalMs), intervalMs, now);
+      this.store.completeSchedule(checkId, state.nextScheduledAt, next, this.ownerId);
       return {
         checkId,
         outcome: "executed",

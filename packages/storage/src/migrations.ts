@@ -154,9 +154,7 @@ export function runMigrations(database: DatabaseSync, appliedAt = new Date().toI
     try {
       database.exec(migration.sql);
       database
-        .prepare(
-          "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)"
-        )
+        .prepare("INSERT INTO schema_migrations(version, name, applied_at) VALUES (?, ?, ?)")
         .run(migration.version, migration.name, appliedAt);
       database.exec("COMMIT");
     } catch (error) {

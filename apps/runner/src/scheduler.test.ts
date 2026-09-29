@@ -64,11 +64,7 @@ void test("generates stable scheduled-run idempotency keys", () => {
 
 void test("advances a missed schedule to the next future interval", () => {
   assert.equal(
-    nextFutureSchedule(
-      "2026-09-29T18:00:00.000Z",
-      5 * 60_000,
-      "2026-09-29T18:12:00.000Z"
-    ),
+    nextFutureSchedule("2026-09-29T18:00:00.000Z", 5 * 60_000, "2026-09-29T18:12:00.000Z"),
     "2026-09-29T18:15:00.000Z"
   );
 });
@@ -105,10 +101,7 @@ void test("executes a due check once and advances persisted scheduler state", as
 
     assert.equal(results[0]?.outcome, "executed");
     assert.equal(contexts.length, 1);
-    assert.equal(
-      storage.getSchedulerState(checkId)?.nextScheduledAt,
-      "2026-09-29T18:10:00.000Z"
-    );
+    assert.equal(storage.getSchedulerState(checkId)?.nextScheduledAt, "2026-09-29T18:10:00.000Z");
   } finally {
     storage.close();
   }
@@ -146,10 +139,7 @@ void test("skips stale missed intervals instead of replaying them", async () => 
 
     assert.equal(results[0]?.outcome, "missed_skipped");
     assert.equal(calls, 0);
-    assert.equal(
-      storage.getSchedulerState(checkId)?.nextScheduledAt,
-      "2026-09-29T18:15:00.000Z"
-    );
+    assert.equal(storage.getSchedulerState(checkId)?.nextScheduledAt, "2026-09-29T18:15:00.000Z");
   } finally {
     storage.close();
   }

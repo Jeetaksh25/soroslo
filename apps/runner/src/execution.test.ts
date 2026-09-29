@@ -89,10 +89,7 @@ void test("persists runs, opens an incident, computes SLO, then recovers", async
       configHash: "config-a",
       invoker: invokerFor("0"),
       idempotencyKey: "manual:1",
-      now: clock([
-        "2026-09-29T18:00:00.000Z",
-        "2026-09-29T18:00:01.000Z"
-      ])
+      now: clock(["2026-09-29T18:00:00.000Z", "2026-09-29T18:00:01.000Z"])
     });
     assert.equal(failure1.result.state, "service_fail");
     assert.equal(failure1.incidentEvent, null);
@@ -104,10 +101,7 @@ void test("persists runs, opens an incident, computes SLO, then recovers", async
       configHash: "config-a",
       invoker: invokerFor("0"),
       idempotencyKey: "manual:2",
-      now: clock([
-        "2026-09-29T18:05:00.000Z",
-        "2026-09-29T18:05:01.000Z"
-      ])
+      now: clock(["2026-09-29T18:05:00.000Z", "2026-09-29T18:05:01.000Z"])
     });
     assert.equal(failure2.incidentEvent, "opened");
     assert.ok(failure2.incidentId);
@@ -120,10 +114,7 @@ void test("persists runs, opens an incident, computes SLO, then recovers", async
       configHash: "config-a",
       invoker: invokerFor("1"),
       idempotencyKey: "manual:3",
-      now: clock([
-        "2026-09-29T18:10:00.000Z",
-        "2026-09-29T18:10:01.000Z"
-      ])
+      now: clock(["2026-09-29T18:10:00.000Z", "2026-09-29T18:10:01.000Z"])
     });
     assert.equal(pass1.incidentEvent, null);
 
@@ -134,16 +125,11 @@ void test("persists runs, opens an incident, computes SLO, then recovers", async
       configHash: "config-a",
       invoker: invokerFor("1"),
       idempotencyKey: "manual:4",
-      now: clock([
-        "2026-09-29T18:15:00.000Z",
-        "2026-09-29T18:15:01.000Z"
-      ])
+      now: clock(["2026-09-29T18:15:00.000Z", "2026-09-29T18:15:01.000Z"])
     });
     assert.equal(pass2.incidentEvent, "recovered");
 
-    const runtime = storage.getIncidentRuntime(
-      qualifiedCheckId("payments", "health")
-    );
+    const runtime = storage.getIncidentRuntime(qualifiedCheckId("payments", "health"));
     assert.equal(runtime.state, "healthy");
     assert.equal(runtime.activeIncidentId, null);
   } finally {

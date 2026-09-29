@@ -1,10 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { CheckConfig } from "@soroslo/config";
-import {
-  executeCheck,
-  type CheckRunResult,
-  type StepInvoker
-} from "@soroslo/probe-engine";
+import { executeCheck, type CheckRunResult, type StepInvoker } from "@soroslo/probe-engine";
 import { parseDurationMs } from "@soroslo/shared";
 import {
   advanceIncidentState,
@@ -13,11 +9,7 @@ import {
   type IncidentTransitionEvent,
   type SloSnapshot
 } from "@soroslo/slo-engine";
-import {
-  SoroSloStorage,
-  qualifiedCheckId,
-  type PersistedRunInput
-} from "@soroslo/storage";
+import { SoroSloStorage, qualifiedCheckId, type PersistedRunInput } from "@soroslo/storage";
 
 export interface PersistedExecutionResult {
   runId: string;
@@ -73,17 +65,13 @@ function persistenceInput(options: {
   finishedAt: string;
   result: CheckRunResult;
 }): PersistedRunInput {
-  const lastFailure = [...options.result.steps]
-    .reverse()
-    .find((step) => step.failure)?.failure;
+  const lastFailure = [...options.result.steps].reverse().find((step) => step.failure)?.failure;
 
   return {
     id: options.runId,
     idempotencyKey: options.idempotencyKey,
     checkId: options.checkId,
-    ...(options.scheduledAt !== undefined
-      ? { scheduledAt: options.scheduledAt }
-      : {}),
+    ...(options.scheduledAt !== undefined ? { scheduledAt: options.scheduledAt } : {}),
     startedAt: options.startedAt,
     finishedAt: options.finishedAt,
     state: options.result.state,
@@ -112,18 +100,14 @@ function persistenceInput(options: {
         state: step.state,
         contractId: configuredStep.contract,
         functionName: configuredStep.function,
-        ...(step.evidence?.result !== undefined
-          ? { result: step.evidence.result }
-          : {}),
+        ...(step.evidence?.result !== undefined ? { result: step.evidence.result } : {}),
         ...(step.evidence?.rawReturnXdr !== undefined
           ? { rawReturnXdr: step.evidence.rawReturnXdr }
           : {}),
         ...(step.evidence?.minResourceFee !== undefined
           ? { minResourceFee: step.evidence.minResourceFee }
           : {}),
-        ...(step.evidence?.elapsedMs !== undefined
-          ? { elapsedMs: step.evidence.elapsedMs }
-          : {}),
+        ...(step.evidence?.elapsedMs !== undefined ? { elapsedMs: step.evidence.elapsedMs } : {}),
         ...(step.evidence !== undefined ? { evidence: step.evidence } : {}),
         ...(step.failure !== undefined
           ? {
@@ -134,12 +118,8 @@ function persistenceInput(options: {
         assertions: step.assertions.map((assertion) => ({
           path: assertion.path,
           operator: assertion.operator,
-          ...(assertion.expected !== undefined
-            ? { expected: assertion.expected }
-            : {}),
-          ...(assertion.observed !== undefined
-            ? { observed: assertion.observed }
-            : {}),
+          ...(assertion.expected !== undefined ? { expected: assertion.expected } : {}),
+          ...(assertion.observed !== undefined ? { observed: assertion.observed } : {}),
           passed: assertion.passed,
           reason: assertion.reason
         }))
@@ -162,8 +142,7 @@ export async function runCheckAndPersist(options: {
   const now = options.now ?? (() => new Date());
   const started = now();
   const timeoutMs =
-    options.timeoutMs ??
-    (options.check.timeout ? parseDurationMs(options.check.timeout) : 15_000);
+    options.timeoutMs ?? (options.check.timeout ? parseDurationMs(options.check.timeout) : 15_000);
   const runId = randomUUID();
 
   const result = await executeWithDeadline(
@@ -182,9 +161,7 @@ export async function runCheckAndPersist(options: {
       checkId,
       check: options.check,
       configHash: options.configHash,
-      ...(options.scheduledAt !== undefined
-        ? { scheduledAt: options.scheduledAt }
-        : {}),
+      ...(options.scheduledAt !== undefined ? { scheduledAt: options.scheduledAt } : {}),
       startedAt: started.toISOString(),
       finishedAt: finished.toISOString(),
       result
@@ -231,11 +208,7 @@ export async function runCheckAndPersist(options: {
     const since = new Date(
       finished.getTime() - parseDurationMs(options.check.slo.window)
     ).toISOString();
-    const runs = options.storage.listReliabilityRuns(
-      checkId,
-      since,
-      finished.toISOString()
-    );
+    const runs = options.storage.listReliabilityRuns(checkId, since, finished.toISOString());
     slo = calculateSloSnapshot(runs, options.check.slo, { now: finished });
   }
 

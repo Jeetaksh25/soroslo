@@ -1,10 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import type { SoroSloConfig } from "@soroslo/config";
 import { canonicalJson, type RunState } from "@soroslo/shared";
-import type {
-  IncidentRuntimeState,
-  OperationalState
-} from "@soroslo/slo-engine";
+import type { IncidentRuntimeState, OperationalState } from "@soroslo/slo-engine";
 import { runMigrations } from "./migrations.js";
 import type {
   PersistedRunInput,
@@ -155,14 +152,16 @@ export class SoroSloStorage {
       }
 
       this.database
-        .prepare(`
+        .prepare(
+          `
           INSERT INTO runs(
             id, idempotency_key, check_id, scheduled_at, started_at,
             finished_at, state, observed_ledger, rpc_endpoint_fingerprint,
             config_hash, observer_error_code, observer_error_message
           )
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `)
+        `
+        )
         .run(
           input.id,
           input.idempotencyKey,
@@ -250,12 +249,14 @@ export class SoroSloStorage {
     until = new Date().toISOString()
   ): StoredReliabilityRun[] {
     return this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT id, state, finished_at
         FROM runs
         WHERE check_id = ? AND finished_at >= ? AND finished_at <= ?
         ORDER BY finished_at ASC
-      `)
+      `
+      )
       .all(checkId, since, until)
       .map((rawRow) => {
         const row = record(rawRow);
@@ -269,12 +270,14 @@ export class SoroSloStorage {
 
   getSchedulerState(checkId: string): SchedulerState | null {
     const rawRow = this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT check_id, last_scheduled_at, next_scheduled_at,
                lease_owner, lease_expires_at
         FROM scheduler_state
         WHERE check_id = ?
-      `)
+      `
+      )
       .get(checkId);
     if (rawRow === undefined) return null;
 
@@ -290,14 +293,16 @@ export class SoroSloStorage {
 
   ensureSchedulerState(checkId: string, nextScheduledAt: string): SchedulerState {
     this.database
-      .prepare(`
+      .prepare(
+        `
         INSERT INTO scheduler_state(
           check_id, last_scheduled_at, next_scheduled_at,
           lease_owner, lease_expires_at
         )
         VALUES (?, NULL, ?, NULL, NULL)
         ON CONFLICT(check_id) DO NOTHING
-      `)
+      `
+      )
       .run(checkId, nextScheduledAt);
 
     const state = this.getSchedulerState(checkId);
@@ -313,13 +318,15 @@ export class SoroSloStorage {
     leaseExpiresAt: string
   ): boolean {
     const result = this.database
-      .prepare(`
+      .prepare(
+        `
         UPDATE scheduler_state
         SET lease_owner = ?, lease_expires_at = ?
         WHERE check_id = ?
           AND next_scheduled_at = ?
           AND (lease_expires_at IS NULL OR lease_expires_at <= ?)
-      `)
+      `
+      )
       .run(leaseOwner, leaseExpiresAt, checkId, scheduledAt, now);
 
     return Number(result.changes) === 1;
@@ -332,7 +339,8 @@ export class SoroSloStorage {
     leaseOwner: string
   ): boolean {
     const result = this.database
-      .prepare(`
+      .prepare(
+        `
         UPDATE scheduler_state
         SET last_scheduled_at = ?,
             next_scheduled_at = ?,
@@ -341,7 +349,8 @@ export class SoroSloStorage {
         WHERE check_id = ?
           AND next_scheduled_at = ?
           AND lease_owner = ?
-      `)
+      `
+      )
       .run(scheduledAt, nextScheduledAt, checkId, scheduledAt, leaseOwner);
 
     return Number(result.changes) === 1;
@@ -354,7 +363,8 @@ export class SoroSloStorage {
     now: string
   ): boolean {
     const result = this.database
-      .prepare(`
+      .prepare(
+        `
         UPDATE scheduler_state
         SET last_scheduled_at = ?,
             next_scheduled_at = ?,
@@ -363,7 +373,8 @@ export class SoroSloStorage {
         WHERE check_id = ?
           AND next_scheduled_at = ?
           AND (lease_expires_at IS NULL OR lease_expires_at <= ?)
-      `)
+      `
+      )
       .run(expectedScheduledAt, nextScheduledAt, checkId, expectedScheduledAt, now);
 
     return Number(result.changes) === 1;
@@ -371,22 +382,26 @@ export class SoroSloStorage {
 
   releaseScheduleLease(checkId: string, leaseOwner: string): void {
     this.database
-      .prepare(`
+      .prepare(
+        `
         UPDATE scheduler_state
         SET lease_owner = NULL, lease_expires_at = NULL
         WHERE check_id = ? AND lease_owner = ?
-      `)
+      `
+      )
       .run(checkId, leaseOwner);
   }
 
   getIncidentRuntime(checkId: string): StoredIncidentRuntime {
     const rawRow = this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT operational_state, consecutive_failures,
                consecutive_passes, active_incident_id
         FROM check_runtime_state
         WHERE check_id = ?
-      `)
+      `
+      )
       .get(checkId);
 
     if (rawRow === undefined) {
@@ -414,7 +429,8 @@ export class SoroSloStorage {
     updatedAt: string
   ): void {
     this.database
-      .prepare(`
+      .prepare(
+        `
         INSERT INTO check_runtime_state(
           check_id, operational_state, consecutive_failures,
           consecutive_passes, active_incident_id, updated_at
@@ -426,7 +442,8 @@ export class SoroSloStorage {
           consecutive_passes = excluded.consecutive_passes,
           active_incident_id = excluded.active_incident_id,
           updated_at = excluded.updated_at
-      `)
+      `
+      )
       .run(
         checkId,
         runtime.state,
@@ -446,13 +463,15 @@ export class SoroSloStorage {
     summary: string;
   }): void {
     this.database
-      .prepare(`
+      .prepare(
+        `
         INSERT INTO incidents(
           id, check_id, opened_at, recovered_at, state,
           opening_run_id, recovery_run_id, failure_count, summary
         )
         VALUES (?, ?, ?, NULL, 'open', ?, NULL, ?, ?)
-      `)
+      `
+      )
       .run(
         input.id,
         input.checkId,
@@ -463,19 +482,17 @@ export class SoroSloStorage {
       );
   }
 
-  recoverIncident(input: {
-    id: string;
-    recoveredAt: string;
-    recoveryRunId: string;
-  }): boolean {
+  recoverIncident(input: { id: string; recoveredAt: string; recoveryRunId: string }): boolean {
     const result = this.database
-      .prepare(`
+      .prepare(
+        `
         UPDATE incidents
         SET recovered_at = ?,
             recovery_run_id = ?,
             state = 'recovered'
         WHERE id = ? AND state = 'open'
-      `)
+      `
+      )
       .run(input.recoveredAt, input.recoveryRunId, input.id);
 
     return Number(result.changes) === 1;
@@ -483,12 +500,14 @@ export class SoroSloStorage {
 
   getIncident(id: string): StoredIncident | null {
     const rawRow = this.database
-      .prepare(`
+      .prepare(
+        `
         SELECT id, check_id, opened_at, recovered_at, state,
                opening_run_id, recovery_run_id, failure_count, summary
         FROM incidents
         WHERE id = ?
-      `)
+      `
+      )
       .get(id);
     if (rawRow === undefined) return null;
 
