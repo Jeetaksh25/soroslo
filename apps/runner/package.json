@@ -3,10 +3,26 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Scheduled synthetic-check runner.",
+  "description": "Restart-safe scheduled synthetic-check runner.",
+  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test"
+    "test": "pnpm build && node --test dist/*.test.js"
+  },
+  "dependencies": {
+    "@soroslo/config": "workspace:*",
+    "@soroslo/probe-engine": "workspace:*",
+    "@soroslo/shared": "workspace:*",
+    "@soroslo/slo-engine": "workspace:*",
+    "@soroslo/storage": "workspace:*",
+    "@soroslo/stellar": "workspace:*"
   }
 }

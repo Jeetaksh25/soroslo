@@ -3,10 +3,23 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Persistence boundary and migrations.",
+  "description": "SQLite persistence boundary, migrations, scheduler state, and operational history.",
+  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test"
+    "test": "pnpm build && node --test dist/*.test.js"
+  },
+  "dependencies": {
+    "@soroslo/config": "workspace:*",
+    "@soroslo/shared": "workspace:*",
+    "@soroslo/slo-engine": "workspace:*"
   }
 }

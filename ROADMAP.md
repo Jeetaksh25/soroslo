@@ -9,33 +9,33 @@ The authoritative v0.1 contract is [`docs/technical-spec-v0.1.md`](docs/technica
 - [x] CI workflow
 - [x] Governance/security documents
 - [x] Initial ADRs
-- [ ] Generate and commit pnpm lockfile from a networked development environment
+- [x] Generate and commit pnpm lockfile from a networked development environment
 - [ ] Protect `main` after the first green CI run
 
 ## M1 — Stellar probe core
 
-- [ ] Versioned network configuration
-- [ ] Stellar RPC adapter
-- [ ] `simulateTransaction` invocation builder
-- [ ] Return-value normalization
-- [ ] Deterministic RPC fixtures
+- [x] Versioned network configuration
+- [x] Stellar RPC adapter
+- [x] `simulateTransaction` invocation builder
+- [x] Return-value normalization
+- [x] Deterministic RPC fixtures
 
 ## M2 — Check engine
 
-- [ ] `soroslo.yml` schema
-- [ ] Ordered steps
-- [ ] Prior-step references
-- [ ] Deterministic assertions
-- [ ] `pass` / `service_fail` / `observer_error` classification
+- [x] `soroslo.yml` schema
+- [x] Ordered steps
+- [x] Prior-step references
+- [x] Deterministic assertions
+- [x] `pass` / `service_fail` / `observer_error` classification
 
 ## M3 — Persistence and reliability
 
-- [ ] SQLite migrations
-- [ ] Restart-safe scheduler
-- [ ] Run-based SLI
-- [ ] SLO status
-- [ ] Error budgets
-- [ ] Incident state machine
+- [x] SQLite migrations
+- [x] Restart-safe scheduler
+- [x] Run-based SLI
+- [x] SLO status
+- [x] Error budgets
+- [x] Incident state machine
 
 ## M4 — Product surfaces
 
