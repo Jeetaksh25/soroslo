@@ -22,6 +22,9 @@
     "@soroslo/shared": "workspace:*",
     "@soroslo/slo-engine": "workspace:*",
     "@soroslo/storage": "workspace:*",
-    "fastify": "5.6.1"
+    "fastify": "5.6.1",
+    "@soroslo/probe-engine": "workspace:*",
+    "@soroslo/runner": "workspace:*",
+    "@soroslo/stellar": "workspace:*"
   }
 }
