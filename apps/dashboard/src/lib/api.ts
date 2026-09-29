@@ -88,6 +88,20 @@ export interface IncidentSummary {
   serviceName?: string;
 }
 
+
+export interface NotificationAttemptSummary {
+  id: string;
+  incidentId: string;
+  channelId: string;
+  eventType: string;
+  attempt: number;
+  startedAt: string;
+  finishedAt: string | null;
+  state: string;
+  responseCode: number | null;
+  errorClass: string | null;
+}
+
 export interface SloSnapshot {
   windowStart: string;
   windowEnd: string;
@@ -157,6 +171,13 @@ export async function getRun(runId: string): Promise<RunDetail> {
 export async function getIncidents(): Promise<IncidentSummary[]> {
   const data = await getJson<{ incidents: IncidentSummary[] }>("/api/v1/incidents?limit=200");
   return data.incidents;
+}
+
+export async function getIncident(incidentId: string): Promise<{
+  incident: IncidentSummary;
+  notifications: NotificationAttemptSummary[];
+}> {
+  return getJson(`/api/v1/incidents/${encodeURIComponent(incidentId)}`);
 }
 
 export function formatPercent(value: number | null): string {
