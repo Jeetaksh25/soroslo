@@ -1,0 +1,12 @@
+{
+  "name": "@soroslo/alerts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Incident and notification domain boundary.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test"
+  }
+}

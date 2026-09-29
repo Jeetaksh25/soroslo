@@ -1,0 +1,12 @@
+{
+  "name": "@soroslo/slo-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Run-based SLI, SLO, and error-budget calculations.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test"
+  }
+}

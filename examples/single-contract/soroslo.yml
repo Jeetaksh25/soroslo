@@ -1,0 +1,32 @@
+version: 1
+
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+  defaultTimeout: 15s
+
+networks:
+  testnet:
+    preset: testnet
+
+services:
+  - id: example-service
+    name: Example service
+    checks:
+      - id: example-read
+        name: Example read remains usable
+        network: testnet
+        every: 5m
+        slo:
+          target: 99.9
+          window: 7d
+          minEligibleRuns: 100
+          maxObserverErrorRate: 1.0
+        steps:
+          - id: read
+            contract: CREPLACE_WITH_TESTNET_CONTRACT_ID
+            function: value
+            args: []
+            assertions:
+              - path: $
+                op: exists

@@ -1,0 +1,14 @@
+node_modules/
+.pnpm-store/
+dist/
+.next/
+coverage/
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+.soroslo/
+.DS_Store
+.idea/
+.vscode/
