@@ -32,6 +32,7 @@ export default async function IncidentsPage() {
                 <span>Opened {formatDate(incident.openedAt)}</span>
                 <span>Recovered {formatDate(incident.recoveredAt)}</span>
                 <Link href={`/runs/${encodeURIComponent(incident.openingRunId)}`}>Opening evidence</Link>
+                <Link href={`/incidents/${encodeURIComponent(incident.id)}`}>Incident detail</Link>
                 {incident.recoveryRunId ? (
                   <Link href={`/runs/${encodeURIComponent(incident.recoveryRunId)}`}>Recovery evidence</Link>
                 ) : null}
