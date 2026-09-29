@@ -7,7 +7,7 @@ import {
   resolveNetworkConfig
 } from "./network.js";
 
-test("testnet preset resolves the official SDF RPC and passphrase", () => {
+void test("testnet preset resolves the official SDF RPC and passphrase", () => {
   const config = resolveNetworkConfig({ name: "testnet", preset: "testnet" });
 
   assert.equal(config.rpcUrl, `${DEFAULT_TESTNET_RPC_URL}/`);
@@ -15,21 +15,21 @@ test("testnet preset resolves the official SDF RPC and passphrase", () => {
   assert.equal(config.endpointOrigin, DEFAULT_TESTNET_RPC_URL);
 });
 
-test("mainnet requires an explicit RPC endpoint", () => {
+void test("mainnet requires an explicit RPC endpoint", () => {
   assert.throws(
     () => resolveNetworkConfig({ name: "mainnet", preset: "mainnet" }),
     /explicit rpcUrl/
   );
 });
 
-test("custom network requires both RPC URL and passphrase", () => {
+void test("custom network requires both RPC URL and passphrase", () => {
   assert.throws(
     () => resolveNetworkConfig({ name: "local", rpcUrl: "http://localhost:8000" }),
     /require rpcUrl and networkPassphrase/
   );
 });
 
-test("endpoint fingerprint does not expose credentials", () => {
+void test("endpoint fingerprint does not expose credentials", () => {
   const secretUrl = "https://user:secret@example.com/private/key?token=abc";
   const fingerprint = fingerprintRpcEndpoint(secretUrl);
 
