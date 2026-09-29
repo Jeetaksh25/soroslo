@@ -24,6 +24,9 @@ jobs:
           targets: wasm32v1-none
           components: rustfmt
 
+      - name: Setup Stellar CLI
+        uses: stellar/stellar-cli@v28.1.0
+
       - name: Generate fixture lockfile
         run: cargo generate-lockfile --manifest-path contracts/fixtures/Cargo.toml
 
@@ -34,7 +37,7 @@ jobs:
         run: cargo test --manifest-path contracts/fixtures/Cargo.toml
 
       - name: Build fixture WASM
-        run: cargo build --manifest-path contracts/fixtures/Cargo.toml --target wasm32v1-none --release
+        run: stellar contract build --manifest-path contracts/fixtures/Cargo.toml
 
       - name: Commit fixture lockfile
         run: |
