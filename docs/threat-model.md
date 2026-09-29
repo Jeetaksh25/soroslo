@@ -36,19 +36,19 @@ Webhook destinations are untrusted remote servers. SoroSLO signs payloads, refus
 
 ## Primary threats and mitigations
 
-| Threat | v0.1 mitigation |
-| --- | --- |
-| Theft of Stellar funds | Runtime accepts no secret seed/private key and never signs/submits transactions |
-| Wrong-network evidence | Configured network passphrase is checked against RPC network identity |
-| RPC outage represented as service failure | Transport/tool failures are classified as `observer_error` |
-| Replay/duplicate webhook delivery | Deterministic event IDs plus persistent per-channel delivery ledger |
-| Webhook tampering | HMAC-SHA256 signature over timestamp and raw body |
-| SSRF through webhook URL | HTTPS-only, no redirects, DNS/IP private-network rejection by default |
-| Remote dashboard/API exposure | Loopback default; remote API bind requires bearer auth |
-| Secret leakage in evidence | Notification secrets are runtime-only and not persisted in run/notification evidence |
-| Code execution through config | Strict schema; no eval, shell, arbitrary JS, template engine, or dynamic plugins |
-| Scheduler duplicate work | Persisted schedule leases plus deterministic scheduled-run idempotency keys |
-| Misleading uptime claims | Explicit run-based SLI semantics and separate observer coverage |
+| Threat                                    | v0.1 mitigation                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------------------ |
+| Theft of Stellar funds                    | Runtime accepts no secret seed/private key and never signs/submits transactions      |
+| Wrong-network evidence                    | Configured network passphrase is checked against RPC network identity                |
+| RPC outage represented as service failure | Transport/tool failures are classified as `observer_error`                           |
+| Replay/duplicate webhook delivery         | Deterministic event IDs plus persistent per-channel delivery ledger                  |
+| Webhook tampering                         | HMAC-SHA256 signature over timestamp and raw body                                    |
+| SSRF through webhook URL                  | HTTPS-only, no redirects, DNS/IP private-network rejection by default                |
+| Remote dashboard/API exposure             | Loopback default; remote API bind requires bearer auth                               |
+| Secret leakage in evidence                | Notification secrets are runtime-only and not persisted in run/notification evidence |
+| Code execution through config             | Strict schema; no eval, shell, arbitrary JS, template engine, or dynamic plugins     |
+| Scheduler duplicate work                  | Persisted schedule leases plus deterministic scheduled-run idempotency keys          |
+| Misleading uptime claims                  | Explicit run-based SLI semantics and separate observer coverage                      |
 
 ## Residual risks
 

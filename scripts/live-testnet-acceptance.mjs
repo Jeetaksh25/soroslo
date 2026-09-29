@@ -1,12 +1,6 @@
 import { writeFileSync } from "node:fs";
-import {
-  createStellarStepInvoker,
-  executeCheck
-} from "../packages/probe-engine/dist/index.js";
-import {
-  StellarRpcClient,
-  resolveNetworkConfig
-} from "../packages/stellar/dist/index.js";
+import { createStellarStepInvoker, executeCheck } from "../packages/probe-engine/dist/index.js";
+import { StellarRpcClient, resolveNetworkConfig } from "../packages/stellar/dist/index.js";
 
 const contractId = process.env.SOROSLO_TESTNET_FIXTURE_CONTRACT;
 if (!contractId) {
@@ -143,9 +137,7 @@ const actual = {
 
 for (const [name, state] of Object.entries(expected)) {
   if (actual[name] !== state) {
-    throw new Error(
-      `Acceptance case '${name}' expected '${state}' but received '${actual[name]}'`
-    );
+    throw new Error(`Acceptance case '${name}' expected '${state}' but received '${actual[name]}'`);
   }
 }
 

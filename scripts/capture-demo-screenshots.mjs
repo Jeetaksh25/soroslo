@@ -1,9 +1,7 @@
 import { readFileSync, mkdirSync } from "node:fs";
 import { chromium } from "@playwright/test";
 
-const manifest = JSON.parse(
-  readFileSync("acceptance/demo-manifest.json", "utf8")
-);
+const manifest = JSON.parse(readFileSync("acceptance/demo-manifest.json", "utf8"));
 const baseURL = process.env.SOROSLO_DEMO_URL ?? "http://127.0.0.1:3300";
 
 mkdirSync("docs/assets", { recursive: true });
@@ -29,10 +27,7 @@ await capture(
 );
 
 if (manifest.runId) {
-  await capture(
-    `/runs/${encodeURIComponent(manifest.runId)}`,
-    "soroslo-run-testnet.png"
-  );
+  await capture(`/runs/${encodeURIComponent(manifest.runId)}`, "soroslo-run-testnet.png");
 }
 
 if (manifest.incidentId) {

@@ -116,9 +116,7 @@ const storage = SoroSloStorage.open("acceptance/demo.sqlite");
 storage.migrate();
 storage.syncConfiguration(loaded.config, loaded.hash);
 
-const client = new StellarRpcClient(
-  resolveNetworkConfig({ name: "testnet", preset: "testnet" })
-);
+const client = new StellarRpcClient(resolveNetworkConfig({ name: "testnet", preset: "testnet" }));
 const invoker = createStellarStepInvoker(client);
 const service = loaded.config.services[0];
 if (!service) throw new Error("Demo service is missing");
@@ -160,11 +158,7 @@ const manifest = {
   }))
 };
 
-writeFileSync(
-  "acceptance/demo-manifest.json",
-  JSON.stringify(manifest, null, 2) + "\n",
-  "utf8"
-);
+writeFileSync("acceptance/demo-manifest.json", JSON.stringify(manifest, null, 2) + "\n", "utf8");
 storage.close();
 
 console.log(JSON.stringify(manifest, null, 2));

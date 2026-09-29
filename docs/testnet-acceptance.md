@@ -20,13 +20,13 @@ The normal SoroSLO acceptance process receives **no secret seed** and performs *
 
 ## Required cases
 
-| Case | Expected state | Verified state |
-| --- | --- | --- |
-| healthy + structured/freshness read | `pass` | `pass` |
-| chained read using `$steps.<id>.result` | `pass` | `pass` |
-| intentionally false assertion | `service_fail` | `service_fail` |
-| deterministic fixture contract error | `service_fail` | `service_fail` |
-| unreachable RPC endpoint | `observer_error` | `observer_error` |
+| Case                                    | Expected state   | Verified state   |
+| --------------------------------------- | ---------------- | ---------------- |
+| healthy + structured/freshness read     | `pass`           | `pass`           |
+| chained read using `$steps.<id>.result` | `pass`           | `pass`           |
+| intentionally false assertion           | `service_fail`   | `service_fail`   |
+| deterministic fixture contract error    | `service_fail`   | `service_fail`   |
+| unreachable RPC endpoint                | `observer_error` | `observer_error` |
 
 ## Latest verified deployment
 
