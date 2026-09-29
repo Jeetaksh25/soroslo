@@ -1,0 +1,47 @@
+version: 1
+
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+  defaultTimeout: 15s
+
+networks:
+  testnet:
+    preset: testnet
+
+services:
+  - id: fixture-service
+    name: SoroSLO Testnet fixture
+    checks:
+      - id: chained-read
+        name: Prior-step value can feed a later simulation
+        network: testnet
+        every: 5m
+        timeout: 15s
+
+        slo:
+          target: 99.9
+          window: 7d
+          minEligibleRuns: 20
+          maxObserverErrorRate: 5
+
+        steps:
+          - id: base
+            contract: ${SOROSLO_TESTNET_FIXTURE_CONTRACT}
+            function: value
+            args: []
+            assertions:
+              - path: $
+                op: equals
+                value: "42"
+
+          - id: doubled
+            contract: ${SOROSLO_TESTNET_FIXTURE_CONTRACT}
+            function: double
+            args:
+              - type: i128
+                from: $steps.base.result
+            assertions:
+              - path: $
+                op: equals
+                value: "84"
