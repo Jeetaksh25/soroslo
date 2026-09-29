@@ -1,0 +1,508 @@
+import { DatabaseSync } from "node:sqlite";
+import type { SoroSloConfig } from "@soroslo/config";
+import { canonicalJson, type RunState } from "@soroslo/shared";
+import type {
+  IncidentRuntimeState,
+  OperationalState
+} from "@soroslo/slo-engine";
+import { runMigrations } from "./migrations.js";
+import type {
+  PersistedRunInput,
+  SchedulerState,
+  StoredIncident,
+  StoredIncidentRuntime,
+  StoredReliabilityRun
+} from "./models.js";
+
+function record(row: unknown): Record<string, unknown> {
+  if (typeof row !== "object" || row === null || Array.isArray(row)) {
+    throw new TypeError("SQLite row is not an object");
+  }
+  return row as Record<string, unknown>;
+}
+
+function nullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function requiredString(value: unknown, field: string): string {
+  if (typeof value !== "string") {
+    throw new TypeError(`SQLite field '${field}' is not a string`);
+  }
+  return value;
+}
+
+function requiredNumber(value: unknown, field: string): number {
+  if (typeof value !== "number") {
+    throw new TypeError(`SQLite field '${field}' is not a number`);
+  }
+  return value;
+}
+
+function jsonOrNull(value: unknown): string | null {
+  return value === undefined ? null : canonicalJson(value);
+}
+
+export function qualifiedCheckId(serviceId: string, checkId: string): string {
+  return `${serviceId}:${checkId}`;
+}
+
+export class SoroSloStorage {
+  readonly database: DatabaseSync;
+
+  constructor(database: DatabaseSync) {
+    this.database = database;
+  }
+
+  static open(path = ":memory:"): SoroSloStorage {
+    const database = new DatabaseSync(path);
+    database.exec("PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
+    return new SoroSloStorage(database);
+  }
+
+  migrate(appliedAt?: string): void {
+    runMigrations(this.database, appliedAt);
+  }
+
+  close(): void {
+    this.database.close();
+  }
+
+  syncConfiguration(
+    config: SoroSloConfig,
+    configHash: string,
+    now = new Date().toISOString()
+  ): string[] {
+    const checkIds: string[] = [];
+
+    this.database.exec("BEGIN IMMEDIATE");
+    try {
+      this.database.prepare("UPDATE checks SET enabled = 0, updated_at = ?").run(now);
+
+      const upsertService = this.database.prepare(`
+        INSERT INTO services(id, name, config_hash, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          name = excluded.name,
+          config_hash = excluded.config_hash,
+          updated_at = excluded.updated_at
+      `);
+
+      const upsertCheck = this.database.prepare(`
+        INSERT INTO checks(
+          id, local_id, service_id, name, network, schedule,
+          config_hash, enabled, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          local_id = excluded.local_id,
+          service_id = excluded.service_id,
+          name = excluded.name,
+          network = excluded.network,
+          schedule = excluded.schedule,
+          config_hash = excluded.config_hash,
+          enabled = 1,
+          updated_at = excluded.updated_at
+      `);
+
+      const ensureRuntime = this.database.prepare(`
+        INSERT INTO check_runtime_state(
+          check_id, operational_state, consecutive_failures,
+          consecutive_passes, active_incident_id, updated_at
+        )
+        VALUES (?, 'healthy', 0, 0, NULL, ?)
+        ON CONFLICT(check_id) DO NOTHING
+      `);
+
+      for (const service of config.services) {
+        upsertService.run(service.id, service.name, configHash, now, now);
+
+        for (const check of service.checks) {
+          const checkId = qualifiedCheckId(service.id, check.id);
+          checkIds.push(checkId);
+          upsertCheck.run(
+            checkId,
+            check.id,
+            service.id,
+            check.name,
+            check.network,
+            check.every,
+            configHash,
+            now,
+            now
+          );
+          ensureRuntime.run(checkId, now);
+        }
+      }
+
+      this.database.exec("COMMIT");
+      return checkIds;
+    } catch (error) {
+      this.database.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
+  recordRun(input: PersistedRunInput): boolean {
+    this.database.exec("BEGIN IMMEDIATE");
+    try {
+      const existing = this.database
+        .prepare("SELECT 1 AS present FROM runs WHERE idempotency_key = ?")
+        .get(input.idempotencyKey);
+      if (existing !== undefined) {
+        this.database.exec("ROLLBACK");
+        return false;
+      }
+
+      this.database
+        .prepare(`
+          INSERT INTO runs(
+            id, idempotency_key, check_id, scheduled_at, started_at,
+            finished_at, state, observed_ledger, rpc_endpoint_fingerprint,
+            config_hash, observer_error_code, observer_error_message
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `)
+        .run(
+          input.id,
+          input.idempotencyKey,
+          input.checkId,
+          input.scheduledAt ?? null,
+          input.startedAt,
+          input.finishedAt,
+          input.state,
+          input.observedLedger ?? null,
+          input.rpcEndpointFingerprint ?? null,
+          input.configHash,
+          input.observerErrorCode ?? null,
+          input.observerErrorMessage ?? null
+        );
+
+      const insertStep = this.database.prepare(`
+        INSERT INTO step_results(
+          id, run_id, step_id, ordinal, state, contract_id, function_name,
+          result_json, raw_return_xdr, min_resource_fee, elapsed_ms,
+          evidence_json, failure_kind, failure_message
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      const insertAssertion = this.database.prepare(`
+        INSERT INTO assertion_results(
+          id, step_result_id, ordinal, path, operator,
+          expected_json, observed_json, passed, reason
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      for (const step of input.steps) {
+        const stepResultId = `${input.id}:step:${step.ordinal}`;
+        insertStep.run(
+          stepResultId,
+          input.id,
+          step.stepId,
+          step.ordinal,
+          step.state,
+          step.contractId,
+          step.functionName,
+          jsonOrNull(step.result),
+          step.rawReturnXdr ?? null,
+          step.minResourceFee ?? null,
+          step.elapsedMs ?? null,
+          jsonOrNull(step.evidence),
+          step.failureKind ?? null,
+          step.failureMessage ?? null
+        );
+
+        for (const [ordinal, assertion] of step.assertions.entries()) {
+          insertAssertion.run(
+            `${stepResultId}:assertion:${ordinal}`,
+            stepResultId,
+            ordinal,
+            assertion.path,
+            assertion.operator,
+            jsonOrNull(assertion.expected),
+            jsonOrNull(assertion.observed),
+            assertion.passed ? 1 : 0,
+            assertion.reason
+          );
+        }
+      }
+
+      this.database.exec("COMMIT");
+      return true;
+    } catch (error) {
+      this.database.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
+  hasRunIdempotencyKey(idempotencyKey: string): boolean {
+    return (
+      this.database
+        .prepare("SELECT 1 AS present FROM runs WHERE idempotency_key = ?")
+        .get(idempotencyKey) !== undefined
+    );
+  }
+
+  listReliabilityRuns(
+    checkId: string,
+    since: string,
+    until = new Date().toISOString()
+  ): StoredReliabilityRun[] {
+    return this.database
+      .prepare(`
+        SELECT id, state, finished_at
+        FROM runs
+        WHERE check_id = ? AND finished_at >= ? AND finished_at <= ?
+        ORDER BY finished_at ASC
+      `)
+      .all(checkId, since, until)
+      .map((rawRow) => {
+        const row = record(rawRow);
+        return {
+          id: requiredString(row.id, "id"),
+          state: requiredString(row.state, "state") as RunState,
+          finishedAt: requiredString(row.finished_at, "finished_at")
+        };
+      });
+  }
+
+  getSchedulerState(checkId: string): SchedulerState | null {
+    const rawRow = this.database
+      .prepare(`
+        SELECT check_id, last_scheduled_at, next_scheduled_at,
+               lease_owner, lease_expires_at
+        FROM scheduler_state
+        WHERE check_id = ?
+      `)
+      .get(checkId);
+    if (rawRow === undefined) return null;
+
+    const row = record(rawRow);
+    return {
+      checkId: requiredString(row.check_id, "check_id"),
+      lastScheduledAt: nullableString(row.last_scheduled_at),
+      nextScheduledAt: requiredString(row.next_scheduled_at, "next_scheduled_at"),
+      leaseOwner: nullableString(row.lease_owner),
+      leaseExpiresAt: nullableString(row.lease_expires_at)
+    };
+  }
+
+  ensureSchedulerState(checkId: string, nextScheduledAt: string): SchedulerState {
+    this.database
+      .prepare(`
+        INSERT INTO scheduler_state(
+          check_id, last_scheduled_at, next_scheduled_at,
+          lease_owner, lease_expires_at
+        )
+        VALUES (?, NULL, ?, NULL, NULL)
+        ON CONFLICT(check_id) DO NOTHING
+      `)
+      .run(checkId, nextScheduledAt);
+
+    const state = this.getSchedulerState(checkId);
+    if (!state) throw new Error(`Unable to initialize scheduler state for ${checkId}`);
+    return state;
+  }
+
+  tryClaimSchedule(
+    checkId: string,
+    scheduledAt: string,
+    leaseOwner: string,
+    now: string,
+    leaseExpiresAt: string
+  ): boolean {
+    const result = this.database
+      .prepare(`
+        UPDATE scheduler_state
+        SET lease_owner = ?, lease_expires_at = ?
+        WHERE check_id = ?
+          AND next_scheduled_at = ?
+          AND (lease_expires_at IS NULL OR lease_expires_at <= ?)
+      `)
+      .run(leaseOwner, leaseExpiresAt, checkId, scheduledAt, now);
+
+    return Number(result.changes) === 1;
+  }
+
+  completeSchedule(
+    checkId: string,
+    scheduledAt: string,
+    nextScheduledAt: string,
+    leaseOwner: string
+  ): boolean {
+    const result = this.database
+      .prepare(`
+        UPDATE scheduler_state
+        SET last_scheduled_at = ?,
+            next_scheduled_at = ?,
+            lease_owner = NULL,
+            lease_expires_at = NULL
+        WHERE check_id = ?
+          AND next_scheduled_at = ?
+          AND lease_owner = ?
+      `)
+      .run(scheduledAt, nextScheduledAt, checkId, scheduledAt, leaseOwner);
+
+    return Number(result.changes) === 1;
+  }
+
+  skipMissedSchedule(
+    checkId: string,
+    expectedScheduledAt: string,
+    nextScheduledAt: string,
+    now: string
+  ): boolean {
+    const result = this.database
+      .prepare(`
+        UPDATE scheduler_state
+        SET last_scheduled_at = ?,
+            next_scheduled_at = ?,
+            lease_owner = NULL,
+            lease_expires_at = NULL
+        WHERE check_id = ?
+          AND next_scheduled_at = ?
+          AND (lease_expires_at IS NULL OR lease_expires_at <= ?)
+      `)
+      .run(expectedScheduledAt, nextScheduledAt, checkId, expectedScheduledAt, now);
+
+    return Number(result.changes) === 1;
+  }
+
+  releaseScheduleLease(checkId: string, leaseOwner: string): void {
+    this.database
+      .prepare(`
+        UPDATE scheduler_state
+        SET lease_owner = NULL, lease_expires_at = NULL
+        WHERE check_id = ? AND lease_owner = ?
+      `)
+      .run(checkId, leaseOwner);
+  }
+
+  getIncidentRuntime(checkId: string): StoredIncidentRuntime {
+    const rawRow = this.database
+      .prepare(`
+        SELECT operational_state, consecutive_failures,
+               consecutive_passes, active_incident_id
+        FROM check_runtime_state
+        WHERE check_id = ?
+      `)
+      .get(checkId);
+
+    if (rawRow === undefined) {
+      return {
+        state: "healthy",
+        consecutiveFailures: 0,
+        consecutivePasses: 0,
+        activeIncidentId: null
+      };
+    }
+
+    const row = record(rawRow);
+    return {
+      state: requiredString(row.operational_state, "operational_state") as OperationalState,
+      consecutiveFailures: requiredNumber(row.consecutive_failures, "consecutive_failures"),
+      consecutivePasses: requiredNumber(row.consecutive_passes, "consecutive_passes"),
+      activeIncidentId: nullableString(row.active_incident_id)
+    };
+  }
+
+  saveIncidentRuntime(
+    checkId: string,
+    runtime: IncidentRuntimeState,
+    activeIncidentId: string | null,
+    updatedAt: string
+  ): void {
+    this.database
+      .prepare(`
+        INSERT INTO check_runtime_state(
+          check_id, operational_state, consecutive_failures,
+          consecutive_passes, active_incident_id, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(check_id) DO UPDATE SET
+          operational_state = excluded.operational_state,
+          consecutive_failures = excluded.consecutive_failures,
+          consecutive_passes = excluded.consecutive_passes,
+          active_incident_id = excluded.active_incident_id,
+          updated_at = excluded.updated_at
+      `)
+      .run(
+        checkId,
+        runtime.state,
+        runtime.consecutiveFailures,
+        runtime.consecutivePasses,
+        activeIncidentId,
+        updatedAt
+      );
+  }
+
+  openIncident(input: {
+    id: string;
+    checkId: string;
+    openedAt: string;
+    openingRunId: string;
+    failureCount: number;
+    summary: string;
+  }): void {
+    this.database
+      .prepare(`
+        INSERT INTO incidents(
+          id, check_id, opened_at, recovered_at, state,
+          opening_run_id, recovery_run_id, failure_count, summary
+        )
+        VALUES (?, ?, ?, NULL, 'open', ?, NULL, ?, ?)
+      `)
+      .run(
+        input.id,
+        input.checkId,
+        input.openedAt,
+        input.openingRunId,
+        input.failureCount,
+        input.summary
+      );
+  }
+
+  recoverIncident(input: {
+    id: string;
+    recoveredAt: string;
+    recoveryRunId: string;
+  }): boolean {
+    const result = this.database
+      .prepare(`
+        UPDATE incidents
+        SET recovered_at = ?,
+            recovery_run_id = ?,
+            state = 'recovered'
+        WHERE id = ? AND state = 'open'
+      `)
+      .run(input.recoveredAt, input.recoveryRunId, input.id);
+
+    return Number(result.changes) === 1;
+  }
+
+  getIncident(id: string): StoredIncident | null {
+    const rawRow = this.database
+      .prepare(`
+        SELECT id, check_id, opened_at, recovered_at, state,
+               opening_run_id, recovery_run_id, failure_count, summary
+        FROM incidents
+        WHERE id = ?
+      `)
+      .get(id);
+    if (rawRow === undefined) return null;
+
+    const row = record(rawRow);
+    return {
+      id: requiredString(row.id, "id"),
+      checkId: requiredString(row.check_id, "check_id"),
+      openedAt: requiredString(row.opened_at, "opened_at"),
+      recoveredAt: nullableString(row.recovered_at),
+      state: requiredString(row.state, "state") as "open" | "recovered",
+      openingRunId: requiredString(row.opening_run_id, "opening_run_id"),
+      recoveryRunId: nullableString(row.recovery_run_id),
+      failureCount: requiredNumber(row.failure_count, "failure_count"),
+      summary: requiredString(row.summary, "summary")
+    };
+  }
+}
