@@ -2,6 +2,16 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const SESSION_COOKIE = "soroslo_session";
 
+function isLoopbackHostname(hostname: string): boolean {
+  const normalized = hostname.trim().toLowerCase();
+  return (
+    normalized === "127.0.0.1" ||
+    normalized === "localhost" ||
+    normalized === "::1" ||
+    normalized === "[::1]"
+  );
+}
+
 async function sha256(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -9,7 +19,11 @@ async function sha256(value: string): Promise<string> {
 }
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
-  if (process.env.SOROSLO_REQUIRE_AUTH !== "true") {
+  const authRequired =
+    process.env.SOROSLO_REQUIRE_AUTH === "true" ||
+    !isLoopbackHostname(request.nextUrl.hostname);
+
+  if (!authRequired) {
     return NextResponse.next();
   }
 
