@@ -53,7 +53,10 @@ function sampleEvent() {
 }
 
 void test("creates deterministic event IDs and webhook signatures", () => {
-  assert.equal(incidentEventId("incident-1", "opened"), incidentEventId("incident-1", "opened"));
+  assert.equal(
+    incidentEventId("incident-1", "opened"),
+    incidentEventId("incident-1", "opened")
+  );
   assert.notEqual(
     incidentEventId("incident-1", "opened"),
     incidentEventId("incident-1", "recovered")
@@ -76,7 +79,10 @@ void test("retries retryable webhook failures and records attempts", async () =>
     calls += 1;
     assert.equal(init?.redirect, "manual");
     const headers = new Headers(init?.headers);
-    assert.match(headers.get("x-soroslo-signature") ?? "", /^sha256=[0-9a-f]{64}$/);
+    assert.match(
+      headers.get("x-soroslo-signature") ?? "",
+      /^sha256=[0-9a-f]{64}$/
+    );
     assert.equal(headers.get("x-soroslo-event-id"), sampleEvent().eventId);
     return Promise.resolve(
       new Response(calls < 3 ? "" : null, { status: calls < 3 ? 503 : 204 })
