@@ -1,0 +1,49 @@
+name: M6 formatter
+
+on:
+  push:
+    branches:
+      - feat/m6-ecosystem-evidence
+    paths:
+      - ".github/workflows/m6-format.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Format M6 files
+        run: |
+          pnpm exec prettier --write             docs/testnet-acceptance.md             docs/threat-model.md             scripts/capture-demo-screenshots.mjs             scripts/live-demo-data.mjs             scripts/live-testnet-acceptance.mjs
+
+      - name: Commit formatting
+        run: |
+          git add             docs/testnet-acceptance.md             docs/threat-model.md             scripts/capture-demo-screenshots.mjs             scripts/live-demo-data.mjs             scripts/live-testnet-acceptance.mjs
+
+          if git diff --cached --quiet; then
+            echo "No formatting changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "style: format M6 release files"
+          git push
