@@ -10,23 +10,39 @@ networks:
     preset: testnet
 
 services:
-  - id: example-service
-    name: Example service
+  - id: fixture-service
+    name: SoroSLO Testnet fixture
     checks:
-      - id: example-read
-        name: Example read remains usable
+      - id: healthy-read
+        name: Fixture health and freshness remain usable
         network: testnet
         every: 5m
+        timeout: 15s
+
         slo:
           target: 99.9
           window: 7d
-          minEligibleRuns: 100
-          maxObserverErrorRate: 1.0
+          minEligibleRuns: 20
+          maxObserverErrorRate: 5
+
         steps:
-          - id: read
-            contract: CREPLACE_WITH_TESTNET_CONTRACT_ID
-            function: value
+          - id: healthy
+            contract: ${SOROSLO_TESTNET_FIXTURE_CONTRACT}
+            function: healthy
             args: []
             assertions:
               - path: $
-                op: exists
+                op: equals
+                value: true
+
+          - id: snapshot
+            contract: ${SOROSLO_TESTNET_FIXTURE_CONTRACT}
+            function: snapshot
+            args: []
+            assertions:
+              - path: $.value
+                op: equals
+                value: "42"
+              - path: $.timestamp
+                op: age_lt
+                value: 5m
