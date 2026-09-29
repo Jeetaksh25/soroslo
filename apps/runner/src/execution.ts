@@ -13,6 +13,7 @@ import { qualifiedCheckId, type PersistedRunInput, type SoroSloStorage } from "@
 
 export interface PersistedExecutionResult {
   runId: string;
+  finishedAt: string;
   result: CheckRunResult;
   incidentEvent: IncidentTransitionEvent;
   incidentId: string | null;
@@ -218,6 +219,7 @@ export async function runCheckAndPersist(options: {
 
   return {
     runId,
+    finishedAt: finished.toISOString(),
     result,
     incidentEvent: transition.event,
     incidentId: activeIncidentId,
