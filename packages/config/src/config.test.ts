@@ -201,7 +201,10 @@ services:
   assert.ok(error instanceof ConfigError);
   const kinds = new Set(error.diagnostics.map((d) => d.kind));
   assert.ok(kinds.has("invalid_id"), `expected an invalid_id, got ${[...kinds].join(", ")}`);
-  assert.ok(error.diagnostics.every((d) => d.code.length > 0), "every diagnostic carries a code");
+  assert.ok(
+    error.diagnostics.every((d) => d.code.length > 0),
+    "every diagnostic carries a code"
+  );
 });
 
 void test("names an unresolved environment variable without echoing a value", () => {
@@ -400,7 +403,8 @@ void test("carries the referenced step and result path as structured data", () =
 });
 
 void test("renders the path once in the human-readable message", () => {
-  const source = configYaml().replace("        every: 5m", "        every: nope")
+  const source = configYaml()
+    .replace("        every: 5m", "        every: nope")
     .replace(/^notifications:[\s\S]*$/m, "");
 
   let error: ConfigError | null = null;
@@ -495,10 +499,7 @@ notifications:
   assert.ok(error instanceof ConfigError);
   assert.equal(error.diagnostics.length, 2, "one diagnostic per referencing field");
   const paths = error.diagnostics.map((d) => d.path).sort();
-  assert.deepEqual(paths, [
-    "notifications.webhooks[0].secret",
-    "notifications.webhooks[1].secret"
-  ]);
+  assert.deepEqual(paths, ["notifications.webhooks[0].secret", "notifications.webhooks[1].secret"]);
   assert.ok(error.diagnostics.every((d) => d.environmentVariable === "SHARED_SECRET"));
 
   // One variable named twice is one missing variable, not two. The header names

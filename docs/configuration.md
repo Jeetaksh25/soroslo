@@ -159,15 +159,15 @@ Invalid SoroSLO configuration (3 errors):
 Each diagnostic also carries a stable `kind` and `code`, so a CLI or dashboard
 can group or filter without parsing the message:
 
-| `kind` | Reported when |
-|--------|---------------|
-| `unknown_field` | a key is present that the schema does not allow |
-| `invalid_type` | a value has the wrong JSON type |
-| `invalid_id` | an id is not a lowercase identifier |
-| `invalid_duration` | a duration is not of the form `10s`, `5m`, `7d` |
-| `invalid_contract_id` | a contract field is not a `C...` StrKey |
-| `invalid_reference` | a reference does not point at an earlier step result |
-| `invalid_value` | any other schema constraint |
+| `kind`                   | Reported when                                         |
+| ------------------------ | ----------------------------------------------------- |
+| `unknown_field`          | a key is present that the schema does not allow       |
+| `invalid_type`           | a value has the wrong JSON type                       |
+| `invalid_id`             | an id is not a lowercase identifier                   |
+| `invalid_duration`       | a duration is not of the form `10s`, `5m`, `7d`       |
+| `invalid_contract_id`    | a contract field is not a `C...` StrKey               |
+| `invalid_reference`      | a reference does not point at an earlier step result  |
+| `invalid_value`          | any other schema constraint                           |
 | `unresolved_environment` | an `${VAR}` reference has no value in the environment |
 
 An unresolved environment variable is reported by name and by the config field
