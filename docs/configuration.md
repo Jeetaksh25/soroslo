@@ -171,9 +171,10 @@ can group or filter without parsing the message:
 | `unresolved_environment` | an `${VAR}` reference has no value in the environment |
 
 An unresolved environment variable is reported by name and by the config field
-that references it. The loader never reads, formats or returns the resolved
-value, so a diagnostic cannot leak a secret even when the missing variable is a
-webhook secret. One diagnostic is reported per referencing field, so a variable
+that references it. The diagnostic path never includes, formats or logs a
+resolved value, so a diagnostic cannot leak a secret even when the missing
+variable is a webhook secret. Expansion itself necessarily reads the value in
+order to substitute it. One diagnostic is reported per referencing field, so a variable
 used in several places lists all of them:
 
 ```

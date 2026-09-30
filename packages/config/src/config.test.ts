@@ -500,4 +500,12 @@ notifications:
     "notifications.webhooks[1].secret"
   ]);
   assert.ok(error.diagnostics.every((d) => d.environmentVariable === "SHARED_SECRET"));
+
+  // One variable named twice is one missing variable, not two. The header names
+  // variables, so it must count distinct names or the sentence is wrong.
+  assert.match(
+    error.message,
+    /requires 1 environment variable that is not set/,
+    `header miscounted the repeated variable: ${error.message.split("\n")[0]}`
+  );
 });

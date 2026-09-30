@@ -82,14 +82,19 @@ export function expandEnvironment(
   // Every unresolved reference is collected before failing, so one load reports
   // all of them rather than making the operator rerun to find the next one.
   // This is safe because reading the source cannot mutate anything, and the
-  // resolved values are never read, formatted or logged.
+  // The diagnostic path never includes, formats or logs a resolved value.
   const unresolved = unresolvedEnvironmentDiagnostics(source, environment);
   if (unresolved.length > 0) {
+    // One diagnostic is emitted per reference location, so the count of
+    // diagnostics is the number of *references*, not of missing variables. The
+    // header names variables, so it counts distinct names or the sentence reads
+    // "2 environment variables" when one variable is named in two fields.
+    const distinctVariables = new Set(unresolved.map((d) => d.environmentVariable)).size;
     throw new ConfigError(
       [
-        `Configuration requires ${unresolved.length} environment ${
-          unresolved.length === 1 ? "variable" : "variables"
-        } that are not set:`,
+        `Configuration requires ${distinctVariables} environment ${
+          distinctVariables === 1 ? "variable" : "variables"
+        } that ${distinctVariables === 1 ? "is" : "are"} not set:`,
         ...unresolved.map((diagnostic) => `  ${diagnostic.path}: ${diagnostic.message}`)
       ].join("\n"),
       { diagnostics: unresolved }

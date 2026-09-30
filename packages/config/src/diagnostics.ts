@@ -205,8 +205,10 @@ function collectEnvironmentReferences(
  * environment cannot satisfy.
  *
  * Only the variable name and the config path are reported. The resolved value
- * is never read, formatted or returned, so a diagnostic cannot leak a secret
- * even when the variable is a webhook secret or a signing key.
+ * is never included, formatted or logged by the diagnostic path, so a
+ * diagnostic cannot leak a secret even when the variable is a webhook secret
+ * or a signing key. Expansion itself necessarily reads the value to substitute
+ * it; only the reporting is constrained here.
  *
  * The message is path-free; the location is carried by `path` alone, because
  * the caller renders the path once alongside it. One diagnostic is returned per
