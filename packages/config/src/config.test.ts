@@ -123,3 +123,45 @@ void test("rejects forward step references", () => {
     /previously completed step/
   );
 });
+void test("rejects a non-string expected value for string operators at load time", () => {
+  const environment = {
+    WEBHOOK_URL: "https://example.com/hook",
+    WEBHOOK_SECRET: "secret"
+  };
+
+  // #25 requires the expected value to be a string for these operators. The
+  // loader must reject the mismatch, not leave it to evaluation time.
+  for (const [op, value] of [
+    ["contains", "42"],
+    ["starts_with", "true"],
+    ["ends_with", "null"]
+  ] as const) {
+    const source = configYaml().replace(
+      /^(\s*)- path: \$$[\s\S]*?value: "0"/m,
+      `$1- path: $\n$1  op: ${op}\n$1  value: ${value}`
+    );
+
+    assert.throws(
+      () => loadConfigText(source, { environment }),
+      new RegExp(`${op} requires a string value`),
+      `${op} with value ${value} must be rejected during loadConfigText`
+    );
+  }
+});
+
+void test("accepts a string expected value for string operators", () => {
+  const environment = {
+    WEBHOOK_URL: "https://example.com/hook",
+    WEBHOOK_SECRET: "secret"
+  };
+
+  const source = configYaml().replace(
+    /^(\s*)- path: \$$[\s\S]*?value: "0"/m,
+    `$1- path: $\n$1  op: contains\n$1  value: "transfer"`
+  );
+
+  const loaded = loadConfigText(source, { environment });
+
+  assert.equal(loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0]?.op, "contains");
+  assert.equal(loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0]?.value, "transfer");
+});

@@ -90,10 +90,21 @@ export const assertionOperatorSchema = z.enum([
   "lte",
   "exists",
   "not_exists",
-  "age_lt"
+  "age_lt",
+  "contains",
+  "starts_with",
+  "ends_with"
 ]);
 
 const assertionValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+
+/**
+ * Operators whose expected value is a string by contract.
+ *
+ * Without this the loader accepted `op: contains, value: 42`, and the mismatch
+ * only surfaced at evaluation time, far from the config field that caused it.
+ */
+const STRING_EXPECTED_OPERATORS = ["contains", "starts_with", "ends_with"] as const;
 
 export const assertionSchema = z
   .object({
@@ -108,6 +119,18 @@ export const assertionSchema = z
     const existenceOperator = assertion.op === "exists" || assertion.op === "not_exists";
     if (!existenceOperator && assertion.value === undefined) {
       context.addIssue({ code: "custom", message: `${assertion.op} requires a value` });
+      return;
+    }
+
+    if (
+      (STRING_EXPECTED_OPERATORS as readonly string[]).includes(assertion.op) &&
+      typeof assertion.value !== "string"
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["value"],
+        message: `${assertion.op} requires a string value`
+      });
     }
   });
 export type AssertionConfig = z.infer<typeof assertionSchema>;
