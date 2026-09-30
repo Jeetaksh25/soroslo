@@ -1,6 +1,7 @@
 # SoroSLO
 
 [![CI](https://github.com/SoroSLO/soroslo/actions/workflows/ci.yml/badge.svg)](https://github.com/SoroSLO/soroslo/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/SoroSLO/soroslo/actions/workflows/codeql.yml/badge.svg)](https://github.com/SoroSLO/soroslo/actions/workflows/codeql.yml)
 [![Release](https://img.shields.io/github/v/release/SoroSLO/soroslo)](https://github.com/SoroSLO/soroslo/releases/tag/v0.1.0)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
@@ -200,7 +201,7 @@ If you want to work on an issue, comment with your intended approach first and w
 
 ## Security
 
-SoroSLO runtime must never accept or persist Stellar secret seeds, mnemonic phrases, private signing keys, or wallet sessions. See [SECURITY.md](SECURITY.md).
+SoroSLO runtime must never accept or persist Stellar secret seeds, mnemonic phrases, private signing keys, or wallet sessions. Pull requests and `main` are also scanned with CodeQL. See [SECURITY.md](SECURITY.md).
 
 ## License
 
