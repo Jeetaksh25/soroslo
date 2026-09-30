@@ -1,0 +1,11 @@
+# Default maintainer review
+* @victorkay97
+
+# Security- and reliability-sensitive surfaces
+SECURITY.md @victorkay97
+packages/stellar/ @victorkay97
+packages/probe-engine/ @victorkay97
+packages/slo-engine/ @victorkay97
+packages/storage/ @victorkay97
+packages/alerts/ @victorkay97
+.github/workflows/ @victorkay97
