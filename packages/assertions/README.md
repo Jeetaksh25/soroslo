@@ -8,7 +8,6 @@ M2 baseline supports:
 - `gt`, `gte`, `lt`, `lte` with exact decimal/integer comparison;
 - `exists` / `not_exists`;
 - `age_lt` operational freshness checks;
-- `between` inclusive numeric intervals with exact bounds;
 - structured reasons for missing paths, type mismatches, and failed comparisons.
 
 The package executes no JavaScript, regex configuration, shell commands, templates, or plugins.
@@ -23,3 +22,10 @@ uses them is not portable to a baseline runtime.
   Comparison is case-sensitive, with no regex or pattern language and no Unicode
   normalization or coercion. A non-string observed value reports
   `type_mismatch`.
+- `between` — inclusive numeric interval. Both bounds are inclusive, so an
+  observed value equal to `lower` or to `upper` passes. Bounds may be numbers or
+  decimal strings and are compared exactly, so a bound beyond IEEE-754 precision
+  is not routed through a float. A configuration whose `lower` exceeds its
+  `upper` is rejected at load time, because such a check could never pass. A
+  non-numeric bound reports `invalid_expected_value`; a non-numeric observed
+  value reports `type_mismatch`.

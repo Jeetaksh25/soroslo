@@ -105,11 +105,17 @@ Operators in the published v0.1 baseline:
 - `exists`
 - `not_exists`
 - `age_lt`
-- `between`
 
-`between` asserts that a numeric value lies inside an inclusive interval. Both
-bounds are inclusive, so an observed value equal to `lower` or to `upper`
-passes:
+Numeric comparisons are exact. There is no JavaScript, regex, shell, or plugin execution.
+
+### Post-v0.1 additions
+
+These operators are merged after the v0.1 release, so a configuration that uses
+them is not portable to a v0.1 runtime.
+
+- `between` asserts that a numeric value lies inside an inclusive interval. Both
+  bounds are inclusive, so an observed value equal to `lower` or to `upper`
+  passes.
 
 ```yaml
 assertions:
@@ -155,7 +161,6 @@ assertions:
     op: ends_with
     value: "USDC"
 ```
-
 ## SLO policy
 
 ```yaml
