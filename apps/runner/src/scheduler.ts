@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { CheckConfig } from "@soroslo/config";
-import { parseDurationMs } from "@soroslo/shared";
+import { applyScheduleJitter, parseDurationMs } from "@soroslo/shared";
 import { qualifiedCheckId, type SchedulerState } from "@soroslo/storage";
 
 export interface SchedulerStore {
@@ -154,9 +154,12 @@ export class RestartSafeScheduler {
 
     let state = this.store.getSchedulerState(checkId);
     if (!state) {
+      // Jitter is derived from the check identity, so restarting the runner
+      // reproduces the same first due time instead of reshuffling every check.
+      const firstDue = new Date(now.getTime() + intervalMs);
       state = this.store.ensureSchedulerState(
         checkId,
-        new Date(now.getTime() + intervalMs).toISOString()
+        applyScheduleJitter(firstDue, checkId, intervalMs, scheduledCheck.check.jitter ?? 0)
       );
     }
 
@@ -166,7 +169,12 @@ export class RestartSafeScheduler {
     }
 
     if (now.getTime() - scheduledMs >= intervalMs) {
-      const next = nextFutureSchedule(state.nextScheduledAt, intervalMs, now);
+      const next = applyScheduleJitter(
+        nextFutureSchedule(state.nextScheduledAt, intervalMs, now),
+        checkId,
+        intervalMs,
+        scheduledCheck.check.jitter ?? 0
+      );
       this.store.skipMissedSchedule(checkId, state.nextScheduledAt, next, nowIso);
       return {
         checkId,
