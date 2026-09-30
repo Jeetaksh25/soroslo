@@ -86,6 +86,24 @@ args:
 
 Simulations do not mutate network state, so a later step cannot observe a mutation from an earlier simulated step.
 
+### Schedule jitter
+
+Checks that share an interval would otherwise start together and stay together, sending a burst at the same RPC endpoint on every tick. A check may opt into a deterministic offset within a bounded share of its interval:
+
+```yaml
+checks:
+  - id: healthy-read
+    every: 5m
+    jitter: 0.1
+    steps: []
+```
+
+- The offset is derived from the check's qualified id (`serviceId/checkId`), so it is stable across restarts and does not reshuffle. It is not random.
+- `jitter` is a fraction of the interval, omitted or `0` by default, which leaves the schedule unchanged.
+- The maximum is **`0.2`** of the interval. A larger value is rejected during config validation.
+- A run is only ever moved later, never earlier than the configured interval allows.
+- Manual runs do not alter the next jittered schedule.
+
 ## Argument types
 
 `bool`, `u32`, `i32`, `u64`, `i64`, `u128`, `i128`, `u256`, `i256`, `timepoint`, `duration`, `symbol`, `string`, `bytes`, and `address`.
