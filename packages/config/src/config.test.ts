@@ -166,18 +166,19 @@ void test("accepts a string expected value for string operators", () => {
   assert.equal(loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0]?.value, "transfer");
 });
 
-
 void test("accepts a between assertion with inclusive bounds", () => {
-  const source = configYaml().replace(
-    `              - path: $
+  const source = configYaml()
+    .replace(
+      `              - path: $
                 op: gt
                 value: "0"`,
-    `              - path: $.value
+      `              - path: $.value
                 op: between
                 value:
                   lower: 1
                   upper: "9007199254740993"`
-  ).replace(/^notifications:[\s\S]*$/m, "");
+    )
+    .replace(/^notifications:[\s\S]*$/m, "");
 
   const loaded = loadConfigText(source, { environment: {} });
   const assertion = loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0];
@@ -185,16 +186,18 @@ void test("accepts a between assertion with inclusive bounds", () => {
 });
 
 void test("rejects a between assertion whose lower bound exceeds the upper", () => {
-  const source = configYaml().replace(
-    `              - path: $
+  const source = configYaml()
+    .replace(
+      `              - path: $
                 op: gt
                 value: "0"`,
-    `              - path: $.value
+      `              - path: $.value
                 op: between
                 value:
                   lower: 10
                   upper: 1`
-  ).replace(/^notifications:[\s\S]*$/m, "");
+    )
+    .replace(/^notifications:[\s\S]*$/m, "");
 
   assert.throws(
     () => loadConfigText(source, { environment: {} }),
@@ -203,14 +206,16 @@ void test("rejects a between assertion whose lower bound exceeds the upper", () 
 });
 
 void test("rejects a between assertion without an object value", () => {
-  const source = configYaml().replace(
-    `              - path: $
+  const source = configYaml()
+    .replace(
+      `              - path: $
                 op: gt
                 value: "0"`,
-    `              - path: $.value
+      `              - path: $.value
                 op: between
                 value: 5`
-  ).replace(/^notifications:[\s\S]*$/m, "");
+    )
+    .replace(/^notifications:[\s\S]*$/m, "");
 
   assert.throws(
     () => loadConfigText(source, { environment: {} }),

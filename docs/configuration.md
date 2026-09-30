@@ -161,6 +161,7 @@ assertions:
     op: ends_with
     value: "USDC"
 ```
+
 ## SLO policy
 
 ```yaml

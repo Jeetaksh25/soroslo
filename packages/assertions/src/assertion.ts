@@ -1,9 +1,4 @@
-import {
-  canonicalJson,
-  compareExactNumeric,
-  getJsonPath,
-  parseDurationMs
-} from "@soroslo/shared";
+import { canonicalJson, compareExactNumeric, getJsonPath, parseDurationMs } from "@soroslo/shared";
 
 export type AssertionOperator =
   | "equals"
