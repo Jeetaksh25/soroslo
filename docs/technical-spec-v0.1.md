@@ -303,17 +303,12 @@ v0.1 operators:
 - `exists`
 - `not_exists`
 - `age_lt`
-- `contains`
-- `starts_with`
-- `ends_with`
 
 Rules:
 
 - Assertions are deterministic.
 - Numeric comparisons use exact integer/decimal handling, never IEEE-754 coercion for large values.
 - `age_lt` accepts a Unix timestamp-like numeric field and compares it with the observed ledger/run wall clock, documenting this as an operational freshness assertion rather than consensus time.
-- `contains`, `starts_with` and `ends_with` apply only to normalized string values. Both sides must be strings: a non-string expected value is reported as `invalid_expected_value`, and a non-string observed value as `type_mismatch` rather than being coerced.
-- String comparison is case-sensitive and byte-for-byte, so the same spec yields the same verdict on any runtime. An empty expected string matches every string, which follows from standard substring and prefix semantics.
 - Missing paths fail except for `not_exists`.
 - Type mismatches produce a failed assertion with a structured reason.
 - No regex, eval, shell, JavaScript, template execution, or plugin code in v0.1.
