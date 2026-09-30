@@ -82,7 +82,7 @@ export function expandEnvironment(
   // Every unresolved reference is collected before failing, so one load reports
   // all of them rather than making the operator rerun to find the next one.
   // This is safe because reading the source cannot mutate anything, and the
-  // The diagnostic path never includes, formats or logs a resolved value.
+  // diagnostic path never includes, formats or logs a resolved value.
   const unresolved = unresolvedEnvironmentDiagnostics(source, environment);
   if (unresolved.length > 0) {
     // One diagnostic is emitted per reference location, so the count of
