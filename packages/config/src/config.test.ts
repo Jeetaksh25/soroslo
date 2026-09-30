@@ -123,3 +123,54 @@ void test("rejects forward step references", () => {
     /previously completed step/
   );
 });
+
+void test("accepts a between assertion with inclusive bounds", () => {
+  const source = configYaml().replace(
+    `              - path: $
+                op: gt
+                value: "0"`,
+    `              - path: $.value
+                op: between
+                value:
+                  lower: 1
+                  upper: "9007199254740993"`
+  ).replace(/^notifications:[\s\S]*$/m, "");
+
+  const loaded = loadConfigText(source, { environment: {} });
+  const assertion = loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0];
+  assert.equal(assertion?.op, "between");
+});
+
+void test("rejects a between assertion whose lower bound exceeds the upper", () => {
+  const source = configYaml().replace(
+    `              - path: $
+                op: gt
+                value: "0"`,
+    `              - path: $.value
+                op: between
+                value:
+                  lower: 10
+                  upper: 1`
+  ).replace(/^notifications:[\s\S]*$/m, "");
+
+  assert.throws(
+    () => loadConfigText(source, { environment: {} }),
+    /lower bound must not exceed the upper bound/
+  );
+});
+
+void test("rejects a between assertion without an object value", () => {
+  const source = configYaml().replace(
+    `              - path: $
+                op: gt
+                value: "0"`,
+    `              - path: $.value
+                op: between
+                value: 5`
+  ).replace(/^notifications:[\s\S]*$/m, "");
+
+  assert.throws(
+    () => loadConfigText(source, { environment: {} }),
+    /between requires an object with lower and upper bounds/
+  );
+});
