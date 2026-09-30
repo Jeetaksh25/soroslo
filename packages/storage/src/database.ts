@@ -349,7 +349,8 @@ export class SoroSloStorage {
     checkId: string,
     expectedScheduledAt: string,
     nextScheduledAt: string,
-    schedulePolicyHash: string
+    schedulePolicyHash: string,
+    now: string
   ): SchedulerState {
     this.database
       .prepare(
@@ -358,10 +359,10 @@ export class SoroSloStorage {
         SET next_scheduled_at = ?, schedule_policy_hash = ?
         WHERE check_id = ?
           AND next_scheduled_at = ?
-          AND lease_owner IS NULL
+          AND (lease_owner IS NULL OR lease_expires_at IS NULL OR lease_expires_at <= ?)
       `
       )
-      .run(nextScheduledAt, schedulePolicyHash, checkId, expectedScheduledAt);
+      .run(nextScheduledAt, schedulePolicyHash, checkId, expectedScheduledAt, now);
 
     const state = this.getSchedulerState(checkId);
     if (!state) throw new Error(`Unable to reconcile scheduler state for ${checkId}`);
