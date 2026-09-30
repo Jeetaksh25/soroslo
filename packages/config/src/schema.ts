@@ -1,5 +1,5 @@
 import { StrKey } from "@stellar/stellar-sdk";
-import { isDuration } from "@soroslo/shared";
+import { compareExactNumeric, isDuration } from "@soroslo/shared";
 import { z } from "zod";
 
 export const idSchema = z
@@ -90,10 +90,20 @@ export const assertionOperatorSchema = z.enum([
   "lte",
   "exists",
   "not_exists",
-  "age_lt"
+  "age_lt",
+  "between"
 ]);
 
 const assertionValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+
+/** Inclusive numeric bounds for the \`between\` operator. */
+export const assertionBoundsSchema = z
+  .object({
+    lower: assertionValueSchema,
+    upper: assertionValueSchema
+  })
+  .strict();
+export type AssertionBounds = z.infer<typeof assertionBoundsSchema>;
 
 export const assertionSchema = z
   .object({
@@ -101,13 +111,64 @@ export const assertionSchema = z
       .string()
       .regex(/^\$(?:\.[A-Za-z_][A-Za-z0-9_-]*|\[\d+\])*$/, "must be a supported JSON path"),
     op: assertionOperatorSchema,
-    value: assertionValueSchema.optional()
+    value: z.union([assertionValueSchema, assertionBoundsSchema]).optional()
   })
   .strict()
   .superRefine((assertion, context) => {
     const existenceOperator = assertion.op === "exists" || assertion.op === "not_exists";
     if (!existenceOperator && assertion.value === undefined) {
       context.addIssue({ code: "custom", message: `${assertion.op} requires a value` });
+      return;
+    }
+
+    const isBoundsObject =
+      typeof assertion.value === "object" &&
+      assertion.value !== null &&
+      !Array.isArray(assertion.value);
+
+    // `value` has to admit the bounds object for `between` to be expressible at
+    // all, so every other operator rejects it here. Widening the schema and
+    // leaving it at that would let `op: gt, value: {lower, upper}` load.
+    if (assertion.op !== "between") {
+      if (isBoundsObject) {
+        context.addIssue({
+          code: "custom",
+          path: ["value"],
+          message: `${assertion.op} does not accept an object value`
+        });
+      }
+      return;
+    }
+
+    // Parsed through the bounds schema rather than by inspection, so the
+    // narrowing is the schema's job instead of a hand-written type guard.
+    const bounds = assertionBoundsSchema.safeParse(assertion.value);
+    if (!bounds.success) {
+      context.addIssue({
+        code: "custom",
+        path: ["value"],
+        message: "between requires an object with lower and upper bounds"
+      });
+      return;
+    }
+
+    // lower > upper is unsatisfiable, so it is caught here rather than becoming
+    // a check that can only ever fail at runtime. Comparison is exact, so a
+    // pair of large integers a float would rank equal is still rejected.
+    try {
+      if (compareExactNumeric(bounds.data.lower, bounds.data.upper) > 0) {
+        context.addIssue({
+          code: "custom",
+          path: ["value"],
+          message: "between lower bound must not exceed the upper bound"
+        });
+      }
+    } catch {
+      context.addIssue({
+        code: "custom",
+        path: ["value"],
+        message: "between bounds must be numeric"
+      });
     }
   });
 export type AssertionConfig = z.infer<typeof assertionSchema>;

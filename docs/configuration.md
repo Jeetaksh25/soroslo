@@ -94,7 +94,7 @@ Large integer values should be written as decimal strings.
 
 ## Assertions
 
-v0.1 operators:
+Operators in the published v0.1 baseline:
 
 - `equals`
 - `not_equals`
@@ -107,6 +107,34 @@ v0.1 operators:
 - `age_lt`
 
 Numeric comparisons are exact. There is no JavaScript, regex, shell, or plugin execution.
+
+### Post-v0.1 additions
+
+These operators are merged after the v0.1 release, so a configuration that uses
+them is not portable to a v0.1 runtime.
+
+- `between` asserts that a numeric value lies inside an inclusive interval. Both
+  bounds are inclusive, so an observed value equal to `lower` or to `upper`
+  passes.
+
+```yaml
+assertions:
+  - path: $.ledger
+    op: between
+    value:
+      lower: 1000
+      upper: 2000
+  - path: $.ratio
+    op: between
+    value:
+      lower: "0.75"
+      upper: "1.25"
+```
+
+A configuration whose `lower` exceeds its `upper` is rejected at load time,
+because such a check could never pass. Comparison is exact for large integers
+and decimals, so a bound beyond IEEE-754 precision is compared correctly rather
+than through a float.
 
 ## SLO policy
 

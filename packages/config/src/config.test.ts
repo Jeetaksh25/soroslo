@@ -123,3 +123,116 @@ void test("rejects forward step references", () => {
     /previously completed step/
   );
 });
+
+void test("accepts a between assertion with inclusive bounds", () => {
+  const source = configYaml().replace(
+    `              - path: $
+                op: gt
+                value: "0"`,
+    `              - path: $.value
+                op: between
+                value:
+                  lower: 1
+                  upper: "9007199254740993"`
+  ).replace(/^notifications:[\s\S]*$/m, "");
+
+  const loaded = loadConfigText(source, { environment: {} });
+  const assertion = loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0];
+  assert.equal(assertion?.op, "between");
+});
+
+void test("rejects a between assertion whose lower bound exceeds the upper", () => {
+  const source = configYaml().replace(
+    `              - path: $
+                op: gt
+                value: "0"`,
+    `              - path: $.value
+                op: between
+                value:
+                  lower: 10
+                  upper: 1`
+  ).replace(/^notifications:[\s\S]*$/m, "");
+
+  assert.throws(
+    () => loadConfigText(source, { environment: {} }),
+    /lower bound must not exceed the upper bound/
+  );
+});
+
+void test("rejects a between assertion without an object value", () => {
+  const source = configYaml().replace(
+    `              - path: $
+                op: gt
+                value: "0"`,
+    `              - path: $.value
+                op: between
+                value: 5`
+  ).replace(/^notifications:[\s\S]*$/m, "");
+
+  assert.throws(
+    () => loadConfigText(source, { environment: {} }),
+    /between requires an object with lower and upper bounds/
+  );
+});
+
+void test("rejects a bounds object for an operator other than between", () => {
+  const environment = {
+    WEBHOOK_URL: "https://example.com/hook",
+    WEBHOOK_SECRET: "secret"
+  };
+
+  // Widening `value` to admit `{lower, upper}` for `between` must not leak the
+  // object into operators whose contract is a scalar.
+  for (const op of ["gt", "equals", "age_lt"] as const) {
+    const source = configYaml()
+      .replace(
+        `              - path: $
+                op: gt
+                value: "0"`,
+        `              - path: $.value
+                op: ${op}
+                value:
+                  lower: 1
+                  upper: 5`
+      )
+      .replace(/^notifications:[\s\S]*$/m, "");
+
+    assert.throws(
+      () => loadConfigText(source, { environment }),
+      new RegExp(`${op} does not accept an object value`),
+      `${op} must reject a bounds object during loadConfigText`
+    );
+  }
+});
+
+void test("accepts a bounds object for between and rejects an inverted pair", () => {
+  const environment = {
+    WEBHOOK_URL: "https://example.com/hook",
+    WEBHOOK_SECRET: "secret"
+  };
+  const bounds = (lower: string, upper: string): string =>
+    configYaml()
+      .replace(
+        `              - path: $
+                op: gt
+                value: "0"`,
+        `              - path: $.value
+                op: between
+                value:
+                  lower: "${lower}"
+                  upper: "${upper}"`
+      )
+      .replace(/^notifications:[\s\S]*$/m, "");
+
+  const loaded = loadConfigText(bounds("1", "5"), { environment });
+  const value = loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0]?.value as {
+    lower: string;
+    upper: string;
+  };
+  assert.deepEqual(value, { lower: "1", upper: "5" });
+
+  assert.throws(
+    () => loadConfigText(bounds("5", "1"), { environment }),
+    /lower bound must not exceed/
+  );
+});
