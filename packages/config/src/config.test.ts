@@ -166,7 +166,6 @@ void test("accepts a string expected value for string operators", () => {
   assert.equal(loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0]?.value, "transfer");
 });
 
-
 void test("accepts a jitter fraction within the documented cap", () => {
   const source = configYaml()
     .replace("        every: 5m", "        every: 5m\n        jitter: 0.2")
