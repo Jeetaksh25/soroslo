@@ -419,3 +419,85 @@ void test("renders the path once in the human-readable message", () => {
   const occurrences = error.message.split(path).length - 1;
   assert.equal(occurrences, 1, `path '${path}' appeared ${occurrences} times in the message`);
 });
+
+void test("renders the path once for an unresolved environment diagnostic", () => {
+  const source = `version: 1
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+networks:
+  testnet:
+    preset: testnet
+services:
+  - id: payments
+    name: Payments
+    checks: []
+notifications:
+  webhooks:
+    - id: ops
+      url: https://example.com/hook
+      secret: \${MISSING_WEBHOOK_SECRET}
+`;
+
+  let error: ConfigError | null = null;
+  try {
+    loadConfigText(source, { environment: {} });
+  } catch (caught) {
+    error = caught as ConfigError;
+  }
+
+  assert.ok(error instanceof ConfigError);
+  const path = error.diagnostics[0]?.path ?? "";
+  assert.equal(path, "notifications.webhooks[0].secret");
+
+  // The loader prefixes `diagnostic.path`, so the message must not carry the
+  // path too. Counting occurrences catches the duplicated-path regression that
+  // a Zod-error-only test missed.
+  const occurrences = error.message.split(path).length - 1;
+  assert.equal(occurrences, 1, `path '${path}' appeared ${occurrences} times in: ${error.message}`);
+  assert.ok(
+    !error.diagnostics[0]?.message.includes(path),
+    "the diagnostic message itself must be path-free"
+  );
+});
+
+void test("reports one diagnostic per referencing field for the same variable", () => {
+  // The same variable named in two places must produce two diagnostics with
+  // distinct paths, or an operator cannot tell which fields to fix.
+  const source = `version: 1
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+networks:
+  testnet:
+    preset: testnet
+services:
+  - id: payments
+    name: Payments
+    checks: []
+notifications:
+  webhooks:
+    - id: ops
+      url: https://example.com/hook
+      secret: \${SHARED_SECRET}
+    - id: ops2
+      url: https://example.com/hook2
+      secret: \${SHARED_SECRET}
+`;
+
+  let error: ConfigError | null = null;
+  try {
+    loadConfigText(source, { environment: {} });
+  } catch (caught) {
+    error = caught as ConfigError;
+  }
+
+  assert.ok(error instanceof ConfigError);
+  assert.equal(error.diagnostics.length, 2, "one diagnostic per referencing field");
+  const paths = error.diagnostics.map((d) => d.path).sort();
+  assert.deepEqual(paths, [
+    "notifications.webhooks[0].secret",
+    "notifications.webhooks[1].secret"
+  ]);
+  assert.ok(error.diagnostics.every((d) => d.environmentVariable === "SHARED_SECRET"));
+});

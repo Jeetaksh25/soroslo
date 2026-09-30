@@ -166,17 +166,24 @@ export function diagnosticsFromZod(error: z.ZodError): ConfigDiagnostic[] {
  * remembered the last service or check it had seen, which reported a
  * `notifications.webhooks[0].secret` reference as belonging to whichever check
  * happened to precede it.
+ *
+ * Every location is recorded, not just the first per variable: the same
+ * variable can be referenced from several fields and an operator needs all of
+ * them.
  */
 function collectEnvironmentReferences(
   value: unknown,
   path: (string | number)[],
-  into: Map<string, string>
+  into: { name: string; path: string }[]
 ): void {
   if (typeof value === "string") {
     for (const match of value.matchAll(/\$\{([A-Z_][A-Z0-9_]*)\}/g)) {
       const name = match[1];
       if (name === undefined) continue;
-      if (!into.has(name)) into.set(name, formatPath(path));
+      const at = formatPath(path);
+      if (!into.some((seen) => seen.name === name && seen.path === at)) {
+        into.push({ name, path: at });
+      }
     }
     return;
   }
@@ -201,6 +208,10 @@ function collectEnvironmentReferences(
  * is never read, formatted or returned, so a diagnostic cannot leak a secret
  * even when the variable is a webhook secret or a signing key.
  *
+ * The message is path-free; the location is carried by `path` alone, because
+ * the caller renders the path once alongside it. One diagnostic is returned per
+ * reference location, so a variable used in several fields lists all of them.
+ *
  * Every unresolved reference is collected before returning, so one load
  * reports all of them instead of stopping at the first.
  */
@@ -208,7 +219,7 @@ export function unresolvedEnvironmentDiagnostics(
   source: string,
   environment: NodeJS.ProcessEnv
 ): ConfigDiagnostic[] {
-  const found = new Map<string, string>();
+  const found: { name: string; path: string }[] = [];
 
   let parsed: unknown;
   try {
@@ -221,12 +232,12 @@ export function unresolvedEnvironmentDiagnostics(
 
   collectEnvironmentReferences(parsed, [], found);
 
-  return [...found]
-    .filter(([name]) => environment[name] === undefined)
-    .map(([name, where]) => ({
-      path: where,
+  return found
+    .filter(({ name }) => environment[name] === undefined)
+    .map(({ name, path }) => ({
+      path,
       kind: "unresolved_environment" as const,
-      message: `Environment variable '${name}' referenced at ${where} is required but not set`,
+      message: `Environment variable '${name}' is required but not set`,
       code: "unresolved_environment",
       environmentVariable: name
     }));

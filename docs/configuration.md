@@ -173,11 +173,17 @@ can group or filter without parsing the message:
 An unresolved environment variable is reported by name and by the config field
 that references it. The loader never reads, formats or returns the resolved
 value, so a diagnostic cannot leak a secret even when the missing variable is a
-webhook secret:
+webhook secret. One diagnostic is reported per referencing field, so a variable
+used in several places lists all of them:
 
 ```
-Environment variable 'SOROSLO_WEBHOOK_SECRET' referenced at services[0].checks[1] is required but not set
+Configuration requires 2 environment variables that are not set:
+  notifications.webhooks[0].secret: Environment variable 'SOROSLO_WEBHOOK_SECRET' is required but not set
+  services[0].checks[0].steps[0].contract: Environment variable 'SOROSLO_FIXTURE_CONTRACT' is required but not set
 ```
+
+The message is path-free and the location is carried by `diagnostic.path`, so a
+structured consumer and a human reader each see the path exactly once.
 
 Consumers can read `ConfigError.diagnostics` directly when they need structured
 output, for example `soroslo validate --json`. A YAML parse failure carries no
