@@ -33,10 +33,10 @@ The current Wave-ready backlog contains 28 issues.
 
 Suggested working complexity:
 
-- Trivial: 5 issues / 500 points
-- Medium: 17 issues / 2,550 points
+- Trivial: 0 issues / 0 points
+- Medium: 22 issues / 3,300 points
 - High: 6 issues / 1,200 points
-- Total planning value: 4,250 points
+- Total planning value: 4,500 points
 
 These are planning values only. Final complexity must be set in the Drips maintainer UI and must respect the repository/org points budget assigned by the Wave Program.
 
@@ -100,10 +100,11 @@ Verified baseline:
 - `main` is covered by an active GitHub ruleset requiring pull requests, `quality`, `e2e`, resolved review conversations, and blocking force-push/deletion;
 - `v0.1.0` is a public non-prerelease release;
 - all 28 contributor issues are open, unassigned, and carry `help wanted`;
-- the five deliberately narrower entry tasks also carry `good first issue`;
+- the five deliberately narrower entry tasks also carry `good first issue`; those labels indicate accessibility, not Trivial Drips complexity;
 - every contributor issue contains Problem, Scope, Acceptance criteria, Tests/verification, Non-goals, Dependencies, and Security/compatibility sections;
 - a stale superseded pull request was closed;
 - current GitHub Actions dependencies were upgraded through green Dependabot pull requests;
+- the complexity plan was re-reviewed against current Drips guidance; no task is being labeled Trivial merely to increase issue count;
 - the one-off v0.1 release automation is being replaced by a reusable tag-verified release workflow;
 - CodeQL analysis is being added for pull requests, `main`, and a weekly scheduled scan.
 
