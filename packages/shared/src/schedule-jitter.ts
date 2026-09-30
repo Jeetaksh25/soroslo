@@ -27,8 +27,12 @@ export function deterministicJitterMs(identity: string, span: number): number {
   const digest = createHash("sha256").update(identity, "utf8").digest();
   // Read the first 48 bits, which is well inside the exact-integer range.
   const value =
-    digest[0]! * 2 ** 40 + digest[1]! * 2 ** 32 + digest[2]! * 2 ** 24 +
-    digest[3]! * 2 ** 16 + digest[4]! * 2 ** 8 + digest[5]!;
+    digest[0]! * 2 ** 40 +
+    digest[1]! * 2 ** 32 +
+    digest[2]! * 2 ** 24 +
+    digest[3]! * 2 ** 16 +
+    digest[4]! * 2 ** 8 +
+    digest[5]!;
 
   return value % span;
 }
@@ -73,8 +77,7 @@ export function applyScheduleJitter(
   intervalMs: number,
   jitterFraction: number
 ): string {
-  const baseMs =
-    scheduledAt instanceof Date ? scheduledAt.getTime() : Date.parse(scheduledAt);
+  const baseMs = scheduledAt instanceof Date ? scheduledAt.getTime() : Date.parse(scheduledAt);
   if (!Number.isFinite(baseMs)) {
     throw new TypeError("Scheduled timestamp must be a valid date");
   }

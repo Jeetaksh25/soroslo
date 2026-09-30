@@ -98,7 +98,8 @@ void test("leaves the timestamp untouched when jitter is disabled", () => {
 void test("preserves the exact shifted instant", () => {
   const base = "2026-09-30T12:00:00.456Z";
   const jittered = applyScheduleJitter(base, "svc/check", 13 * MINUTE, MAX_JITTER_FRACTION);
-  const expected = Date.parse(base) + scheduleJitterMs("svc/check", 13 * MINUTE, MAX_JITTER_FRACTION);
+  const expected =
+    Date.parse(base) + scheduleJitterMs("svc/check", 13 * MINUTE, MAX_JITTER_FRACTION);
 
   assert.equal(Date.parse(jittered), expected);
 });
@@ -128,10 +129,7 @@ void test("stays inside the window for a sub-second anchor at the maximum offset
 });
 
 void test("rejects an invalid anchor timestamp", () => {
-  assert.throws(
-    () => applyScheduleJitter("not a date", "svc/check", 10 * MINUTE, 0.2),
-    TypeError
-  );
+  assert.throws(() => applyScheduleJitter("not a date", "svc/check", 10 * MINUTE, 0.2), TypeError);
 });
 
 void test("rejects a negative jitter span", () => {

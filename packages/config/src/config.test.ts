@@ -168,7 +168,8 @@ void test("accepts a string expected value for string operators", () => {
 
 
 void test("accepts a jitter fraction within the documented cap", () => {
-  const source = configYaml().replace("        every: 5m", "        every: 5m\n        jitter: 0.2")
+  const source = configYaml()
+    .replace("        every: 5m", "        every: 5m\n        jitter: 0.2")
     .replace(/^notifications:[\s\S]*$/m, "");
 
   const loaded = loadConfigText(source, { environment: {} });
@@ -183,7 +184,8 @@ void test("omits jitter by default so existing schedules are unchanged", () => {
 });
 
 void test("rejects a jitter fraction above the cap", () => {
-  const source = configYaml().replace("        every: 5m", "        every: 5m\n        jitter: 0.9")
+  const source = configYaml()
+    .replace("        every: 5m", "        every: 5m\n        jitter: 0.9")
     .replace(/^notifications:[\s\S]*$/m, "");
 
   assert.throws(() => loadConfigText(source, { environment: {} }), /jitter|too big/i);
