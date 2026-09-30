@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { loadConfigText } from "./load.js";
+import { ConfigError, loadConfigText } from "./load.js";
 
 const CONTRACT_ID = "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
 
@@ -122,4 +122,130 @@ void test("rejects forward step references", () => {
       }),
     /previously completed step/
   );
+});
+
+void test("reports every validation error with a normalized bracketed path", () => {
+  const source = `version: 1
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+networks:
+  testnet:
+    preset: testnet
+services:
+  - id: payments
+    name: Payments
+    checks:
+      - id: health
+        name: Health
+        network: testnet
+        every: 5m
+        slo:
+          target: 150
+          window: 7d
+          minEligibleRuns: 20
+          maxObserverErrorRate: 5
+        steps:
+          - id: first
+            contract: ${CONTRACT_ID}
+            function: value
+            args: []
+            assertions:
+              - path: $
+                op: gt
+                value: "0"
+`;
+
+  const error = (() => {
+    try {
+      loadConfigText(source, { environment: {} });
+      return null;
+    } catch (caught) {
+      return caught as ConfigError;
+    }
+  })();
+
+  assert.ok(error, "expected a ConfigError");
+  assert.ok(error instanceof ConfigError);
+  const paths = error.diagnostics.map((d) => d.path);
+  // The index must be bracketed, not dotted: services.0.checks.0 is not a path
+  // an operator can paste into a YAML search.
+  assert.ok(
+    paths.includes("services[0].checks[0].slo.target"),
+    `expected a bracketed index path, got ${JSON.stringify(paths)}`
+  );
+  assert.ok(!paths.some((p) => /\.\d+\./.test(p)), "no dotted indexes should survive");
+});
+
+void test("classifies diagnostics by kind for machine consumers", () => {
+  const source = `version: 1
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+networks:
+  testnet:
+    preset: testnet
+services:
+  - id: Payments
+    name: Payments
+    checks: []
+`;
+
+  let error: ConfigError | null = null;
+  try {
+    loadConfigText(source, { environment: {} });
+  } catch (caught) {
+    error = caught as ConfigError;
+  }
+
+  assert.ok(error instanceof ConfigError);
+  const kinds = new Set(error.diagnostics.map((d) => d.kind));
+  assert.ok(kinds.has("invalid_id"), `expected an invalid_id, got ${[...kinds]}`);
+  assert.ok(error.diagnostics.every((d) => d.code.length > 0), "every diagnostic carries a code");
+});
+
+void test("names an unresolved environment variable without echoing a value", () => {
+  const source = `version: 1
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+networks:
+  testnet:
+    preset: testnet
+services:
+  - id: payments
+    name: Payments
+    checks: []
+notifications:
+  webhooks:
+    - id: ops
+      url: https://example.com/hook
+      secret: \${MISSING_WEBHOOK_SECRET}
+`;
+
+  let error: ConfigError | null = null;
+  try {
+    loadConfigText(source, { environment: {} });
+  } catch (caught) {
+    error = caught as ConfigError;
+  }
+
+  assert.ok(error instanceof ConfigError);
+  assert.equal(error.diagnostics.length, 1);
+  const [diagnostic] = error.diagnostics;
+  assert.equal(diagnostic?.kind, "unresolved_environment");
+  assert.equal(diagnostic?.environmentVariable, "MISSING_WEBHOOK_SECRET");
+  assert.match(diagnostic?.message ?? "", /MISSING_WEBHOOK_SECRET/);
+  // No secret value can appear because none was resolvable, and the message
+  // must not contain a resolved value even when one exists.
+  const withSecret = (() => {
+    try {
+      loadConfigText(source, { environment: { OTHER: "super-secret-value" } });
+      return null;
+    } catch (caught) {
+      return caught as ConfigError;
+    }
+  })();
+  assert.ok(withSecret instanceof ConfigError);
+  assert.ok(!withSecret.message.includes("super-secret-value"));
 });
