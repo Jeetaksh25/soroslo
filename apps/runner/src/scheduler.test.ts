@@ -442,6 +442,177 @@ void test("reconciles jitter onto an existing unjittered schedule", async () => 
   }
 });
 
+void test("reconciles past an expired lease left by a crashed runner", async () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    const jittered: CheckConfig = { ...check, jitter: 0.2 };
+    storage.syncConfiguration(
+      { ...config, services: [{ id: "payments", name: "Payments", checks: [jittered] }] },
+      "config-a"
+    );
+    const checkId = qualifiedCheckId("payments", "health");
+
+    // A crashed runner: the lease owner is still set, but the lease has expired.
+    // The old row also sits far in the future, as a 24h schedule would.
+    storage.ensureSchedulerState(checkId, "2026-09-30T18:00:00.000Z", "stale-policy");
+    storage.tryClaimSchedule(
+      checkId,
+      "2026-09-30T18:00:00.000Z",
+      "crashed-runner",
+      "2026-09-29T17:00:00.000Z",
+      "2026-09-29T17:05:00.000Z"
+    );
+    assert.equal(storage.getSchedulerState(checkId)!.leaseOwner, "crashed-runner");
+
+    const scheduler = new RestartSafeScheduler({
+      ownerId: "runner-a",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+    const result = await scheduler.tick(
+      [
+        {
+          serviceId: "payments",
+          check: jittered,
+          configHash: "config-a",
+          defaultTimeoutMs: 15_000
+        }
+      ],
+      new Date("2026-09-29T18:00:00.000Z")
+    );
+
+    assert.equal(result[0]?.outcome, "not_due");
+    const after = storage.getSchedulerState(checkId)!;
+    assert.notEqual(
+      after.nextScheduledAt,
+      "2026-09-30T18:00:00.000Z",
+      "an expired lease must not stall the policy change behind the old due time"
+    );
+    assert.notEqual(after.schedulePolicyHash, "stale-policy");
+    const base = Date.parse("2026-09-29T18:05:00.000Z");
+    const at = Date.parse(after.nextScheduledAt);
+    assert.ok(at >= base && at <= base + 5 * 60_000 * 0.2, `out of window: ${after.nextScheduledAt}`);
+  } finally {
+    storage.close();
+  }
+});
+
+void test("does not disturb a genuinely active lease", async () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    const jittered: CheckConfig = { ...check, jitter: 0.2 };
+    storage.syncConfiguration(
+      { ...config, services: [{ id: "payments", name: "Payments", checks: [jittered] }] },
+      "config-a"
+    );
+    const checkId = qualifiedCheckId("payments", "health");
+
+    // The in-flight row: a policy mismatch, but the lease is still valid at the
+    // tick's `now`, so reconciliation must leave it exactly as it is.
+    storage.ensureSchedulerState(checkId, "2026-09-29T18:05:00.000Z", "stale-policy");
+    const now = new Date("2026-09-29T18:04:00.000Z");
+    storage.tryClaimSchedule(
+      checkId,
+      "2026-09-29T18:05:00.000Z",
+      "runner-b",
+      "2026-09-29T18:03:00.000Z",
+      "2026-09-29T18:09:00.000Z"
+    );
+
+    const scheduler = new RestartSafeScheduler({
+      ownerId: "runner-a",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+    await scheduler.tick(
+      [
+        {
+          serviceId: "payments",
+          check: jittered,
+          configHash: "config-a",
+          defaultTimeoutMs: 15_000
+        }
+      ],
+      now
+    );
+
+    const after = storage.getSchedulerState(checkId)!;
+    assert.equal(after.nextScheduledAt, "2026-09-29T18:05:00.000Z");
+    assert.equal(after.schedulePolicyHash, "stale-policy");
+    assert.equal(after.leaseOwner, "runner-b");
+  } finally {
+    storage.close();
+  }
+});
+
+void test("reconciles the new policy once the active lease completes", async () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    const jittered: CheckConfig = { ...check, jitter: 0.2 };
+    storage.syncConfiguration(
+      { ...config, services: [{ id: "payments", name: "Payments", checks: [jittered] }] },
+      "config-a"
+    );
+    const checkId = qualifiedCheckId("payments", "health");
+    storage.ensureSchedulerState(checkId, "2026-09-29T18:05:00.000Z", "stale-policy");
+    storage.tryClaimSchedule(
+      checkId,
+      "2026-09-29T18:05:00.000Z",
+      "runner-b",
+      "2026-09-29T18:03:00.000Z",
+      "2026-09-29T18:09:00.000Z"
+    );
+
+    // The in-flight run finishes and releases the lease, advancing the row.
+    const done = storage.completeSchedule(
+      checkId,
+      "2026-09-29T18:05:00.000Z",
+      "2026-09-29T18:06:00.000Z",
+      "runner-b"
+    );
+    assert.equal(done, true);
+
+    const scheduler = new RestartSafeScheduler({
+      ownerId: "runner-a",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+    const result = await scheduler.tick(
+      [
+        {
+          serviceId: "payments",
+          check: jittered,
+          configHash: "config-a",
+          defaultTimeoutMs: 15_000
+        }
+      ],
+      new Date("2026-09-29T18:06:30.000Z")
+    );
+
+    assert.equal(result[0]?.outcome, "not_due");
+    const after = storage.getSchedulerState(checkId)!;
+    assert.equal(
+      after.schedulePolicyHash,
+      schedulePolicyHash(checkId, 5 * 60_000, 0.2),
+      "the released row must pick up the new policy"
+    );
+    const base = Date.parse("2026-09-29T18:11:30.000Z");
+    const at = Date.parse(after.nextScheduledAt);
+    assert.ok(at >= base && at <= base + 5 * 60_000 * 0.2, `out of window: ${after.nextScheduledAt}`);
+  } finally {
+    storage.close();
+  }
+});
+
 void test("changing and disabling jitter re-phases an existing schedule", async () => {
   const storage = SoroSloStorage.open();
   try {

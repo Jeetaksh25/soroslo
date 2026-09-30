@@ -16,12 +16,20 @@ export interface SchedulerStore {
    * The expected current value is passed so the update is a compare-and-set:
    * a concurrent tick that already moved the row makes this a no-op rather
    * than clobbering the newer value.
+   *
+   * `now` distinguishes an active lease from an expired one. A crashed runner
+   * leaves `lease_owner` set after `lease_expires_at` has passed, and
+   * `tryClaimSchedule` treats that as reclaimable. Refusing to reconcile on it
+   * would stall a policy change behind the old due time — a 24h schedule plus a
+   * crashed runner would ignore a new 1m policy on every tick until the old
+   * instant arrived. A genuinely active lease is still left alone.
    */
   reconcileSchedulePolicy(
     checkId: string,
     expectedScheduledAt: string,
     nextScheduledAt: string,
-    schedulePolicyHash: string
+    schedulePolicyHash: string,
+    now: string
   ): SchedulerState;
   tryClaimSchedule(
     checkId: string,
@@ -215,7 +223,8 @@ export class RestartSafeScheduler {
         checkId,
         state.nextScheduledAt,
         phase(base),
-        policyHash
+        policyHash,
+        now.toISOString()
       );
     }
 
