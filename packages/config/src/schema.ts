@@ -1,5 +1,6 @@
 import { StrKey } from "@stellar/stellar-sdk";
-import { compareExactNumeric, isDuration } from "@soroslo/shared";
+import { compareExactNumeric } from "@soroslo/assertions";
+import { isDuration } from "@soroslo/shared";
 import { z } from "zod";
 
 export const idSchema = z

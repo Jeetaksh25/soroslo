@@ -10,6 +10,7 @@
     "test": "pnpm build && node --test dist/*.test.js"
   },
   "dependencies": {
+    "@soroslo/assertions": "workspace:*",
     "@soroslo/shared": "workspace:*",
     "@stellar/stellar-sdk": "17.2.0",
     "yaml": "2.8.1",
