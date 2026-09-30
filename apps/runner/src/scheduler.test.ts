@@ -191,12 +191,16 @@ void test("jittered checks get distinct first schedules that survive a restart",
     );
 
     const due = ["alpha", "beta", "gamma"].map(
-      (serviceId) => storage.getSchedulerState(qualifiedCheckId(serviceId, "health"))?.nextScheduledAt
+      (serviceId) =>
+        storage.getSchedulerState(qualifiedCheckId(serviceId, "health"))?.nextScheduledAt
     );
 
     // Every check was scheduled, and the offsets differ: that is the property
     // that stops three same-interval checks from firing together.
-    assert.ok(due.every((value) => typeof value === "string"), "every check must be scheduled");
+    assert.ok(
+      due.every((value) => typeof value === "string"),
+      "every check must be scheduled"
+    );
     assert.equal(new Set(due).size, 3, `expected distinct schedules, got ${JSON.stringify(due)}`);
 
     // Each due time stays inside the unjittered schedule plus the policy window.
@@ -348,7 +352,9 @@ void test("a manual run does not move the next jittered schedule", async () => {
       }
     });
     await scheduler.tick(
-      [{ serviceId: "payments", check: jittered, configHash: "config-a", defaultTimeoutMs: 15_000 }],
+      [
+        { serviceId: "payments", check: jittered, configHash: "config-a", defaultTimeoutMs: 15_000 }
+      ],
       new Date("2026-09-29T18:00:00.000Z")
     );
 
@@ -385,7 +391,9 @@ void test("a manual run does not move the next jittered schedule", async () => {
 
     // A subsequent tick that is not yet due must also leave it alone.
     const result = await scheduler.tick(
-      [{ serviceId: "payments", check: jittered, configHash: "config-a", defaultTimeoutMs: 15_000 }],
+      [
+        { serviceId: "payments", check: jittered, configHash: "config-a", defaultTimeoutMs: 15_000 }
+      ],
       new Date("2026-09-29T18:01:30.000Z")
     );
     assert.equal(result[0]?.outcome, "not_due");
@@ -435,7 +443,10 @@ void test("reconciles jitter onto an existing unjittered schedule", async () => 
     // policy window, and carrying the new fingerprint.
     const base = Date.parse("2026-09-29T18:05:00.000Z");
     const at = Date.parse(after.nextScheduledAt);
-    assert.ok(at >= base && at <= base + 5 * 60_000 * 0.2, `out of window: ${after.nextScheduledAt}`);
+    assert.ok(
+      at >= base && at <= base + 5 * 60_000 * 0.2,
+      `out of window: ${after.nextScheduledAt}`
+    );
     assert.notEqual(after.schedulePolicyHash, "stale-policy");
   } finally {
     storage.close();
@@ -494,7 +505,10 @@ void test("reconciles past an expired lease left by a crashed runner", async () 
     assert.notEqual(after.schedulePolicyHash, "stale-policy");
     const base = Date.parse("2026-09-29T18:05:00.000Z");
     const at = Date.parse(after.nextScheduledAt);
-    assert.ok(at >= base && at <= base + 5 * 60_000 * 0.2, `out of window: ${after.nextScheduledAt}`);
+    assert.ok(
+      at >= base && at <= base + 5 * 60_000 * 0.2,
+      `out of window: ${after.nextScheduledAt}`
+    );
   } finally {
     storage.close();
   }
@@ -607,7 +621,10 @@ void test("reconciles the new policy once the active lease completes", async () 
     );
     const base = Date.parse("2026-09-29T18:11:30.000Z");
     const at = Date.parse(after.nextScheduledAt);
-    assert.ok(at >= base && at <= base + 5 * 60_000 * 0.2, `out of window: ${after.nextScheduledAt}`);
+    assert.ok(
+      at >= base && at <= base + 5 * 60_000 * 0.2,
+      `out of window: ${after.nextScheduledAt}`
+    );
   } finally {
     storage.close();
   }
