@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout tagged commit
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.17.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Verify tag, version, notes, and main ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="$GITHUB_REF_NAME"
+          VERSION="${TAG#v}"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          NOTES="docs/releases/$TAG.md"
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must use vMAJOR.MINOR.PATCH format: $TAG" >&2
+            exit 1
+          fi
+
+          if [[ "$PACKAGE_VERSION" != "$VERSION" ]]; then
+            echo "package.json version $PACKAGE_VERSION does not match tag $TAG" >&2
+            exit 1
+          fi
+
+          if [[ ! -f "$NOTES" ]]; then
+            echo "Missing release notes: $NOTES" >&2
+            exit 1
+          fi
+
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Tagged commit must be reachable from main." >&2
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify repository
+        run: pnpm verify
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Playwright E2E
+        run: pnpm test:e2e
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="$GITHUB_REF_NAME"
+          NOTES="docs/releases/$TAG.md"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG already has a GitHub release; leaving it unchanged."
+            exit 0
+          fi
+
+          gh release create "$TAG" \
+            --verify-tag \
+            --target "$GITHUB_SHA" \
+            --title "SoroSLO $TAG" \
+            --notes-file "$NOTES"

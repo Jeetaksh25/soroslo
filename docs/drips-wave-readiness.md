@@ -33,10 +33,10 @@ The current Wave-ready backlog contains 28 issues.
 
 Suggested working complexity:
 
-- Trivial: 5 issues / 500 points
-- Medium: 17 issues / 2,550 points
+- Trivial: 0 issues / 0 points
+- Medium: 22 issues / 3,300 points
 - High: 6 issues / 1,200 points
-- Total planning value: 4,250 points
+- Total planning value: 4,500 points
 
 These are planning values only. Final complexity must be set in the Drips maintainer UI and must respect the repository/org points budget assigned by the Wave Program.
 
@@ -91,6 +91,34 @@ Recommended rules:
 Because the project currently has one listed maintainer, do not require an external approving review yet. Add an approval requirement once there is a second active maintainer/reviewer.
 
 Do not require signed commits at this stage because that would raise unnecessary friction for new contributors.
+
+## Application guardrails
+
+Keep the application evidence-based:
+
+- describe the public v0.1 release, Testnet acceptance, CI/security controls, and contributor-ready backlog exactly as they exist;
+- do not claim production adoption, external contributors, users, stars, or ecosystem endorsements that are not independently evidenced;
+- treat all proposed complexity/point totals as planning estimates until they are set in Drips;
+- do not create filler issues or downscope meaningful work just to increase the number of Wave tasks;
+- re-check repository state immediately before submitting because Program admission remains an organizer decision.
+
+## Maintainer-readiness audit — 2026-09-30
+
+Verified baseline:
+
+- repository description and Stellar/Soroban/open-source topics are configured;
+- `main` is covered by an active GitHub ruleset requiring pull requests, `quality`, `e2e`, resolved review conversations, and blocking force-push/deletion;
+- `v0.1.0` is a public non-prerelease release;
+- all 28 contributor issues are open, unassigned, and carry `help wanted`;
+- the five deliberately narrower entry tasks also carry `good first issue`; those labels indicate accessibility, not Trivial Drips complexity;
+- every contributor issue contains Problem, Scope, Acceptance criteria, Tests/verification, Non-goals, Dependencies, and Security/compatibility sections;
+- a stale superseded pull request was closed;
+- current GitHub Actions dependencies were upgraded through green Dependabot pull requests;
+- the complexity plan was re-reviewed against current Drips guidance; no task is being labeled Trivial merely to increase issue count;
+- the one-off v0.1 release automation is being replaced by a reusable tag-verified release workflow;
+- CodeQL analysis is being added for pull requests, `main`, and a weekly scheduled scan.
+
+At the opening of a new Wave cycle, revalidate the dynamic checks below before submitting the repository application.
 
 ## Pre-application checklist
 
