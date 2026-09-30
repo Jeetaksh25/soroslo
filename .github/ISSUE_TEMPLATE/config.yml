@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/SoroSLO/soroslo/security/policy
+    about: Please report security-sensitive issues privately instead of opening a public issue.
+  - name: Contributor and support guide
+    url: https://github.com/SoroSLO/soroslo/blob/main/SUPPORT.md
+    about: Read the support and contributor guidance before opening an issue.

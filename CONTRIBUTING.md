@@ -63,6 +63,8 @@ Do not weaken, skip, or delete tests merely to make CI pass.
 
 Maintainers review contributor PRs against the issue scope and acceptance criteria. A green CI run is required but does not replace code review.
 
+See [MAINTAINERS.md](MAINTAINERS.md) for triage/review responsibilities and [SUPPORT.md](SUPPORT.md) for where to report bugs, request features, or ask usage questions.
+
 ## Scope discipline
 
 SoroSLO is intentionally simulation-only. Contributions that add signing, transaction submission, TTL remediation, full event indexing, arbitrary code execution, or unrelated protocol tooling require an accepted architecture proposal before implementation.

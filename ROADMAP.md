@@ -61,3 +61,21 @@ The authoritative v0.1 contract is [`docs/technical-spec-v0.1.md`](docs/technica
 - [x] Examples
 - [x] v0.1.0 release
 - [x] Contributor-ready Wave backlog
+
+## Post-v0.1 contributor roadmap
+
+The first public release is complete. Ongoing development is tracked through the public contributor backlog rather than extending the frozen v0.1 specification.
+
+See [Wave-ready contributor backlog](docs/wave-backlog.md) for the current 28 scoped tasks, suggested complexity, and sequencing guidance.
+
+Current post-v0.1 themes include:
+
+- operator CLI and configuration ergonomics;
+- evidence retention, backup, export, and migration integrity;
+- dashboard accessibility, filtering, timelines, and reliability views;
+- API pagination, OpenAPI, stable errors, and build metadata;
+- notification redelivery and bounded delivery policy;
+- richer deterministic assertions and Soroban argument support;
+- scheduler/runner lifecycle hardening;
+- multi-RPC observer corroboration and resource evidence;
+- advanced run-based SLO alerting.
