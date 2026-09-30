@@ -1,5 +1,5 @@
 import { StrKey } from "@stellar/stellar-sdk";
-import { isDuration } from "@soroslo/shared";
+import { compareExactNumeric, isDuration } from "@soroslo/shared";
 import { z } from "zod";
 
 export const idSchema = z
@@ -93,7 +93,8 @@ export const assertionOperatorSchema = z.enum([
   "age_lt",
   "contains",
   "starts_with",
-  "ends_with"
+  "ends_with",
+  "between"
 ]);
 
 const assertionValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
@@ -105,6 +106,14 @@ const assertionValueSchema = z.union([z.string(), z.number(), z.boolean(), z.nul
  * only surfaced at evaluation time, far from the config field that caused it.
  */
 const STRING_EXPECTED_OPERATORS = ["contains", "starts_with", "ends_with"] as const;
+/** Inclusive numeric bounds for the \`between\` operator. */
+export const assertionBoundsSchema = z
+  .object({
+    lower: assertionValueSchema,
+    upper: assertionValueSchema
+  })
+  .strict();
+export type AssertionBounds = z.infer<typeof assertionBoundsSchema>;
 
 export const assertionSchema = z
   .object({
@@ -112,7 +121,7 @@ export const assertionSchema = z
       .string()
       .regex(/^\$(?:\.[A-Za-z_][A-Za-z0-9_-]*|\[\d+\])*$/, "must be a supported JSON path"),
     op: assertionOperatorSchema,
-    value: assertionValueSchema.optional()
+    value: z.union([assertionValueSchema, assertionBoundsSchema]).optional()
   })
   .strict()
   .superRefine((assertion, context) => {
@@ -130,6 +139,40 @@ export const assertionSchema = z
         code: "custom",
         path: ["value"],
         message: `${assertion.op} requires a string value`
+      });
+    }
+
+    if (assertion.op !== "between") return;
+
+    if (
+      typeof assertion.value !== "object" ||
+      assertion.value === null ||
+      Array.isArray(assertion.value)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["value"],
+        message: "between requires an object with lower and upper bounds"
+      });
+      return;
+    }
+
+    // lower > upper is unsatisfiable, so it is caught here rather than becoming
+    // a check that can only ever fail at runtime. Comparison is exact, so a
+    // pair of large integers a float would rank equal is still rejected.
+    try {
+      if (compareExactNumeric(assertion.value.lower, assertion.value.upper) > 0) {
+        context.addIssue({
+          code: "custom",
+          path: ["value"],
+          message: "between lower bound must not exceed the upper bound"
+        });
+      }
+    } catch {
+      context.addIssue({
+        code: "custom",
+        path: ["value"],
+        message: "between bounds must be numeric"
       });
     }
   });

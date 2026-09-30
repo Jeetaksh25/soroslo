@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { evaluateAssertion } from "./assertion.js";
-import { compareExactNumeric } from "./numeric.js";
+import { compareExactNumeric } from "@soroslo/shared";
 
 void test("compares integers beyond JavaScript safe integer range exactly", () => {
   assert.equal(compareExactNumeric("9007199254740993", "9007199254740992"), 1);

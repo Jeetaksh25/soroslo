@@ -303,12 +303,14 @@ v0.1 operators:
 - `exists`
 - `not_exists`
 - `age_lt`
+- `between`
 
 Rules:
 
 - Assertions are deterministic.
 - Numeric comparisons use exact integer/decimal handling, never IEEE-754 coercion for large values.
 - `age_lt` accepts a Unix timestamp-like numeric field and compares it with the observed ledger/run wall clock, documenting this as an operational freshness assertion rather than consensus time.
+- `between` asserts membership of an inclusive numeric interval (`lower <= observed <= upper`). A configuration whose lower bound exceeds its upper bound is rejected at load time. Bound comparison reuses the exact integer/decimal path, so bounds beyond IEEE-754 precision are ranked correctly.
 - Missing paths fail except for `not_exists`.
 - Type mismatches produce a failed assertion with a structured reason.
 - No regex, eval, shell, JavaScript, template execution, or plugin code in v0.1.
