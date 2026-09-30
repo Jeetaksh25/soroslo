@@ -156,7 +156,30 @@ void test("the empty expected string is a valid substring and prefix", () => {
     true
   );
   assert.equal(
+<<<<<<< HEAD
     evaluateAssertion({ path: "$.memo", op: "ends_with", value: "" }, root).passed,
     true
+=======
+    evaluateAssertion({ path: "$.value", op: "between", value: [1, 5] }, { value: 5 }).reason,
+    "invalid_expected_value"
+  );
+  assert.equal(
+    evaluateAssertion({ path: "$.value", op: "between", value: { lower: 5, upper: 1 } }, { value: 3 })
+      .reason,
+    "invalid_expected_value"
+  );
+  assert.equal(
+    evaluateAssertion({ path: "$.value", op: "between", value: { lower: 1, upper: 5 } }, { value: "abc" })
+      .reason,
+    "type_mismatch"
+  );
+  // A non-numeric *bound* is the expected value's fault, not the observed
+  // value's, so it reads as invalid_expected_value even though the observed
+  // value here is a number.
+  assert.equal(
+    evaluateAssertion({ path: "$.value", op: "between", value: { lower: "a", upper: "b" } }, { value: 3 })
+      .reason,
+    "invalid_expected_value"
+>>>>>>> 73e5ec8 (fix(config): scope the bounds object to between and refine bound errors)
   );
 });

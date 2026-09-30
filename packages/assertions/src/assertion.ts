@@ -136,25 +136,40 @@ export function evaluateAssertion(
       return result(spec, pathResult.value, false, "invalid_expected_value");
     }
 
-    const { lower, upper } = bounds as { lower: unknown; upper: unknown };
+    const { lower, upper } = bounds;
 
+    // Bounds are inclusive. One shared comparison keeps large integers and
+    // decimals exact, because compareExactNumeric never routes through a
+    // float the way `<` on `number` would.
+    //
+    // Both comparisons are attempted before either verdict so a malformed
+    // bound reads as `invalid_expected_value` rather than being reported as a
+    // mismatch of the observed value. Loaded configs rule both out, but a
+    // direct evaluator call can still pass anything.
+    let observedInRange: boolean;
     try {
-      // Bounds are inclusive. One shared comparison keeps large integers and
-      // decimals exact, because compareExactNumeric never routes through a
-      // float the way `<` on `number` would.
       if (compareExactNumeric(lower, upper) > 0) {
         return result(spec, pathResult.value, false, "invalid_expected_value");
       }
+    } catch {
+      return result(spec, pathResult.value, false, "invalid_expected_value");
+    }
 
-      const passed =
+    try {
+      observedInRange =
         compareExactNumeric(pathResult.value, lower) >= 0 &&
         compareExactNumeric(pathResult.value, upper) <= 0;
-      return result(spec, pathResult.value, passed, passed ? "matched" : "comparison_failed");
     } catch {
-      // A non-numeric observed value or bound is a structured mismatch, not a
-      // thrown error escaping the evaluator.
+      // The bounds are known good here, so this is the observed value's fault.
       return result(spec, pathResult.value, false, "type_mismatch");
     }
+
+    return result(
+      spec,
+      pathResult.value,
+      observedInRange,
+      observedInRange ? "matched" : "comparison_failed"
+    );
   }
 
   if (spec.op === "age_lt") {

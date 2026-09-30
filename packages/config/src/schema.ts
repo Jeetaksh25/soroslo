@@ -142,13 +142,29 @@ export const assertionSchema = z
       });
     }
 
-    if (assertion.op !== "between") return;
+    const isBoundsObject =
+      typeof assertion.value === "object" &&
+      assertion.value !== null &&
+      !Array.isArray(assertion.value);
 
-    if (
-      typeof assertion.value !== "object" ||
-      assertion.value === null ||
-      Array.isArray(assertion.value)
-    ) {
+    // `value` has to admit the bounds object for `between` to be expressible at
+    // all, so every other operator rejects it here. Widening the schema and
+    // leaving it at that would let `op: gt, value: {lower, upper}` load.
+    if (assertion.op !== "between") {
+      if (isBoundsObject) {
+        context.addIssue({
+          code: "custom",
+          path: ["value"],
+          message: `${assertion.op} does not accept an object value`
+        });
+      }
+      return;
+    }
+
+    // Parsed through the bounds schema rather than by inspection, so the
+    // narrowing is the schema's job instead of a hand-written type guard.
+    const bounds = assertionBoundsSchema.safeParse(assertion.value);
+    if (!bounds.success) {
       context.addIssue({
         code: "custom",
         path: ["value"],
@@ -161,7 +177,7 @@ export const assertionSchema = z
     // a check that can only ever fail at runtime. Comparison is exact, so a
     // pair of large integers a float would rank equal is still rejected.
     try {
-      if (compareExactNumeric(assertion.value.lower, assertion.value.upper) > 0) {
+      if (compareExactNumeric(bounds.data.lower, bounds.data.upper) > 0) {
         context.addIssue({
           code: "custom",
           path: ["value"],
