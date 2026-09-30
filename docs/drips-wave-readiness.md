@@ -92,6 +92,23 @@ Because the project currently has one listed maintainer, do not require an exter
 
 Do not require signed commits at this stage because that would raise unnecessary friction for new contributors.
 
+## Maintainer-readiness audit — 2026-09-30
+
+Verified baseline:
+
+- repository description and Stellar/Soroban/open-source topics are configured;
+- `main` is covered by an active GitHub ruleset requiring pull requests, `quality`, `e2e`, resolved review conversations, and blocking force-push/deletion;
+- `v0.1.0` is a public non-prerelease release;
+- all 28 contributor issues are open, unassigned, and carry `help wanted`;
+- the five deliberately narrower entry tasks also carry `good first issue`;
+- every contributor issue contains Problem, Scope, Acceptance criteria, Tests/verification, Non-goals, Dependencies, and Security/compatibility sections;
+- a stale superseded pull request was closed;
+- current GitHub Actions dependencies were upgraded through green Dependabot pull requests;
+- the one-off v0.1 release automation is being replaced by a reusable tag-verified release workflow;
+- CodeQL analysis is being added for pull requests, `main`, and a weekly scheduled scan.
+
+At the opening of a new Wave cycle, revalidate the dynamic checks below before submitting the repository application.
+
 ## Pre-application checklist
 
 Before submitting SoroSLO to the next Stellar Wave cycle:
