@@ -1,5 +1,9 @@
 # SoroSLO
 
+[![CI](https://github.com/SoroSLO/soroslo/actions/workflows/ci.yml/badge.svg)](https://github.com/SoroSLO/soroslo/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/SoroSLO/soroslo)](https://github.com/SoroSLO/soroslo/releases/tag/v0.1.0)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 **Synthetic service-level monitoring for Stellar/Soroban applications.**
 
 SoroSLO is an open-source, self-hosted reliability monitor that runs read-only Soroban simulations against deployed contracts, evaluates deterministic application-level assertions, stores durable evidence, and calculates rolling SLI/SLO and error-budget state.
@@ -180,9 +184,18 @@ SoroSLO maintains a public backlog of scoped contributor work with acceptance cr
 
 - [Browse good first issues](https://github.com/SoroSLO/soroslo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 - [Browse all help-wanted issues](https://github.com/SoroSLO/soroslo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+- Review the [Wave-ready backlog](docs/wave-backlog.md) for suggested complexity and sequencing.
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) for the issue-claiming and pull-request workflow.
+- Read [MAINTAINERS.md](MAINTAINERS.md) for review, triage, and maintainer responsibilities.
 
 If you want to work on an issue, comment with your intended approach first and wait for maintainer confirmation before beginning substantial implementation.
+
+## Project governance and support
+
+- [Maintainer policy](MAINTAINERS.md)
+- [Support guide](SUPPORT.md)
+- [Roadmap](ROADMAP.md)
+- [Changelog](CHANGELOG.md)
 
 ## Security
 
