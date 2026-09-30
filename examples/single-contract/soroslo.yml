@@ -46,6 +46,6 @@ services:
               - path: $.timestamp
                 op: age_lt
                 value: 5m
-              - path: $.label
+              - path: $.value
                 op: starts_with
-                value: "snapshot"
+                value: "4"

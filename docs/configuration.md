@@ -94,7 +94,7 @@ Large integer values should be written as decimal strings.
 
 ## Assertions
 
-v0.1 operators:
+Operators in the published v0.1 baseline:
 
 - `equals`
 - `not_equals`
@@ -105,15 +105,19 @@ v0.1 operators:
 - `exists`
 - `not_exists`
 - `age_lt`
-- `contains`
-- `starts_with`
-- `ends_with`
 
-Numeric comparisons are exact. `contains`, `starts_with` and `ends_with` apply to
-string values only: a non-string expected value is reported as
-`invalid_expected_value`, a non-string observed value as `type_mismatch`, and
-comparison is case-sensitive with no regex or pattern language. There is no
-JavaScript, regex, shell, or plugin execution.
+Numeric comparisons are exact. There is no JavaScript, regex, shell, or plugin execution.
+
+### Post-v0.1 additions
+
+These operators are merged after the v0.1 release, so a configuration that uses
+them is not portable to a v0.1 runtime.
+
+- `contains`, `starts_with` and `ends_with` apply to string values only: a
+  non-string expected value is reported as `invalid_expected_value`, a
+  non-string observed value as `type_mismatch`, and comparison is
+  case-sensitive with no Unicode normalization or coercion. There is no regex or
+  pattern language.
 
 ```yaml
 assertions:
