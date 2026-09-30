@@ -79,16 +79,29 @@ export function expandEnvironment(
   source: string,
   environment: NodeJS.ProcessEnv = process.env
 ): string {
+  // Every unresolved reference is collected before failing, so one load reports
+  // all of them rather than making the operator rerun to find the next one.
+  // This is safe because reading the source cannot mutate anything, and the
+  // resolved values are never read, formatted or logged.
+  const unresolved = unresolvedEnvironmentDiagnostics(source, environment);
+  if (unresolved.length > 0) {
+    throw new ConfigError(
+      [
+        `Configuration requires ${unresolved.length} environment ${
+          unresolved.length === 1 ? "variable" : "variables"
+        } that are not set:`,
+        ...unresolved.map((diagnostic) => `  ${diagnostic.path}: ${diagnostic.message}`)
+      ].join("\n"),
+      { diagnostics: unresolved }
+    );
+  }
+
   return source.replace(/\$\{([A-Z_][A-Z0-9_]*)\}/g, (_match, name: string) => {
     const value = environment[name];
     if (value === undefined) {
-      // Naming the variable and the path is enough to act on; the value is
-      // never read, so a missing secret cannot be echoed into a log.
-      const at = unresolvedEnvironmentDiagnostics(source, environment)[0];
-      throw new ConfigError(
-        at ? at.message : `Environment variable '${name}' is required but not set`,
-        { diagnostics: at ? [at] : [] }
-      );
+      // Unreachable while the collection above passes, but the expansion still
+      // refuses to proceed rather than substituting an empty string.
+      throw new ConfigError(`Environment variable '${name}' is required but not set`);
     }
     return value;
   });

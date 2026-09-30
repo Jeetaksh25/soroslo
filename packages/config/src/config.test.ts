@@ -200,7 +200,7 @@ services:
 
   assert.ok(error instanceof ConfigError);
   const kinds = new Set(error.diagnostics.map((d) => d.kind));
-  assert.ok(kinds.has("invalid_id"), `expected an invalid_id, got ${[...kinds]}`);
+  assert.ok(kinds.has("invalid_id"), `expected an invalid_id, got ${[...kinds].join(", ")}`);
   assert.ok(error.diagnostics.every((d) => d.code.length > 0), "every diagnostic carries a code");
 });
 
@@ -248,4 +248,174 @@ notifications:
   })();
   assert.ok(withSecret instanceof ConfigError);
   assert.ok(!withSecret.message.includes("super-secret-value"));
+});
+
+void test("reports a top-level field path for an unresolved variable", () => {
+  // The indentation-based locator reported this as belonging to the last
+  // service or check it had seen, because `notifications` comes after them.
+  const source = `version: 1
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+networks:
+  testnet:
+    preset: testnet
+services:
+  - id: payments
+    name: Payments
+    checks:
+      - id: health
+        name: Health
+        network: testnet
+        every: 5m
+        steps:
+          - id: read
+            contract: ${CONTRACT_ID}
+            function: value
+            args: []
+            assertions: []
+notifications:
+  webhooks:
+    - id: ops
+      url: \${WEBHOOK_URL}
+      secret: \${WEBHOOK_SECRET}
+`;
+
+  let error: ConfigError | null = null;
+  try {
+    loadConfigText(source, { environment: { CONTRACT_ID: "C".padEnd(56, "A") } });
+  } catch (caught) {
+    error = caught as ConfigError;
+  }
+
+  assert.ok(error instanceof ConfigError);
+  const paths = new Map(error.diagnostics.map((d) => [d.environmentVariable, d.path]));
+
+  // Exact paths, not "somewhere near the last check".
+  assert.equal(paths.get("WEBHOOK_SECRET"), "notifications.webhooks[0].secret");
+  assert.equal(paths.get("WEBHOOK_URL"), "notifications.webhooks[0].url");
+});
+
+void test("reports a variable inside a check at its own field path", () => {
+  const source = `version: 1
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+networks:
+  testnet:
+    preset: testnet
+services:
+  - id: payments
+    name: Payments
+    checks:
+      - id: health
+        name: Health
+        network: testnet
+        every: 5m
+        steps:
+          - id: read
+            contract: \${MISSING_CONTRACT}
+            function: value
+            args: []
+            assertions: []
+`;
+
+  let error: ConfigError | null = null;
+  try {
+    loadConfigText(source, { environment: {} });
+  } catch (caught) {
+    error = caught as ConfigError;
+  }
+
+  assert.ok(error instanceof ConfigError);
+  assert.equal(
+    error.diagnostics[0]?.path,
+    "services[0].checks[0].steps[0].contract",
+    `expected the contract field path, got ${error.diagnostics[0]?.path}`
+  );
+});
+
+void test("collects every unresolved variable instead of stopping at the first", () => {
+  const source = `version: 1
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+networks:
+  testnet:
+    preset: testnet
+services:
+  - id: payments
+    name: Payments
+    checks: []
+notifications:
+  webhooks:
+    - id: ops
+      url: \${MISSING_A}
+      secret: \${MISSING_B}
+`;
+
+  let error: ConfigError | null = null;
+  try {
+    loadConfigText(source, { environment: {} });
+  } catch (caught) {
+    error = caught as ConfigError;
+  }
+
+  assert.ok(error instanceof ConfigError);
+  const named = error.diagnostics.map((d) => d.environmentVariable).sort();
+  assert.deepEqual(named, ["MISSING_A", "MISSING_B"]);
+  // The human-readable message must name both, not just the first failure.
+  assert.match(error.message, /MISSING_A/);
+  assert.match(error.message, /MISSING_B/);
+});
+
+void test("carries the referenced step and result path as structured data", () => {
+  const source = configYaml().replace(
+    "args: []",
+    `args:
+              - type: i128
+                from: $steps.nowhere.result.value`
+  );
+
+  let error: ConfigError | null = null;
+  try {
+    loadConfigText(source, {
+      environment: {
+        WEBHOOK_URL: "https://example.com/hook",
+        WEBHOOK_SECRET: "secret"
+      }
+    });
+  } catch (caught) {
+    error = caught as ConfigError;
+  }
+
+  assert.ok(error instanceof ConfigError);
+  const [diagnostic] = error.diagnostics;
+  assert.equal(diagnostic?.kind, "invalid_reference");
+  // The source field path and the referenced target are separate fields, so a
+  // consumer does not have to parse them back out of the message.
+  assert.equal(diagnostic?.path, "services[0].checks[0].steps[0].args[0].from");
+  assert.equal(diagnostic?.referencedStepId, "nowhere");
+  assert.equal(diagnostic?.referencedResultPath, ".value");
+});
+
+void test("renders the path once in the human-readable message", () => {
+  const source = configYaml().replace("        every: 5m", "        every: nope")
+    .replace(/^notifications:[\s\S]*$/m, "");
+
+  let error: ConfigError | null = null;
+  try {
+    loadConfigText(source, { environment: {} });
+  } catch (caught) {
+    error = caught as ConfigError;
+  }
+
+  assert.ok(error instanceof ConfigError);
+  const path = error.diagnostics[0]?.path ?? "";
+  assert.ok(path.length > 0);
+
+  // The rendered line must not repeat the path: the loader prefixes it and the
+  // message must not carry it too, or readers see `a.b: a.b: ...`.
+  const occurrences = error.message.split(path).length - 1;
+  assert.equal(occurrences, 1, `path '${path}' appeared ${occurrences} times in the message`);
 });
