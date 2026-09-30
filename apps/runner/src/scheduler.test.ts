@@ -144,3 +144,118 @@ void test("skips stale missed intervals instead of replaying them", async () => 
     storage.close();
   }
 });
+
+void test("jittered checks get distinct first schedules that survive a restart", async () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    const jittered: CheckConfig = { ...check, jitter: 0.2 };
+    const twoChecks: SoroSloConfig = {
+      ...config,
+      services: [
+        { id: "alpha", name: "Alpha", checks: [jittered] },
+        { id: "beta", name: "Beta", checks: [jittered] },
+        { id: "gamma", name: "Gamma", checks: [jittered] }
+      ]
+    };
+    storage.syncConfiguration(twoChecks, "config-a");
+
+    const scheduler = new RestartSafeScheduler({
+      ownerId: "runner-a",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+
+    const now = new Date("2026-09-29T18:00:00.000Z");
+    await scheduler.tick(
+      ["alpha", "beta", "gamma"].map((serviceId) => ({
+        serviceId,
+        check: jittered,
+        configHash: "config-a",
+        defaultTimeoutMs: 15_000
+      })),
+      now
+    );
+
+    const due = ["alpha", "beta", "gamma"].map(
+      (serviceId) => storage.getSchedulerState(qualifiedCheckId(serviceId, "health"))?.nextScheduledAt
+    );
+
+    // Every check was scheduled, and the offsets differ: that is the property
+    // that stops three same-interval checks from firing together.
+    assert.ok(due.every((value) => typeof value === "string"), "every check must be scheduled");
+    assert.equal(new Set(due).size, 3, `expected distinct schedules, got ${JSON.stringify(due)}`);
+
+    // Each due time stays inside the unjittered schedule plus the policy window.
+    const base = Date.parse("2026-09-29T18:05:00.000Z");
+    const cap = Date.parse("2026-09-29T18:05:00.000Z") + 5 * 60_000 * 0.2;
+    for (const value of due) {
+      const at = Date.parse(value!);
+      assert.ok(at >= base, `a jittered run must not be earlier than the anchor: ${value}`);
+      assert.ok(at <= cap, `a jittered run must stay inside the policy window: ${value}`);
+    }
+
+    // A restart must reproduce the same first schedules, not reshuffle them.
+    const second = SoroSloStorage.open();
+    try {
+      second.migrate();
+      second.syncConfiguration(twoChecks, "config-a");
+      const restarted = new RestartSafeScheduler({
+        ownerId: "runner-b",
+        store: second,
+        executor() {
+          return Promise.resolve();
+        }
+      });
+      await restarted.tick(
+        ["alpha", "beta", "gamma"].map((serviceId) => ({
+          serviceId,
+          check: jittered,
+          configHash: "config-a",
+          defaultTimeoutMs: 15_000
+        })),
+        now
+      );
+      const repeated = ["alpha", "beta", "gamma"].map(
+        (serviceId) =>
+          second.getSchedulerState(qualifiedCheckId(serviceId, "health"))?.nextScheduledAt
+      );
+      assert.deepEqual(repeated, due, "a restart must reproduce the same jittered schedules");
+    } finally {
+      second.close();
+    }
+  } finally {
+    storage.close();
+  }
+});
+
+void test("a check without jitter keeps its exact unjittered schedule", async () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    storage.syncConfiguration(config, "config-a");
+
+    const scheduler = new RestartSafeScheduler({
+      ownerId: "runner-a",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+
+    await scheduler.tick(
+      [{ serviceId: "payments", check, configHash: "config-a", defaultTimeoutMs: 15_000 }],
+      new Date("2026-09-29T18:00:00.000Z")
+    );
+
+    // The default path must be byte-for-byte what it was before jitter existed.
+    assert.equal(
+      storage.getSchedulerState(qualifiedCheckId("payments", "health"))?.nextScheduledAt,
+      "2026-09-29T18:05:00.000Z"
+    );
+  } finally {
+    storage.close();
+  }
+});
