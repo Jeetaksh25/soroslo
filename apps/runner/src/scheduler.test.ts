@@ -2,10 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { CheckConfig, SoroSloConfig } from "@soroslo/config";
 import { SoroSloStorage, qualifiedCheckId } from "@soroslo/storage";
+import { runCheckAndPersist } from "./execution.js";
 import {
   RestartSafeScheduler,
   nextFutureSchedule,
-  scheduledRunIdempotencyKey
+  scheduledRunIdempotencyKey,
+  type ScheduledCheck
 } from "./scheduler.js";
 
 const CONTRACT_ID = "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
@@ -192,7 +194,7 @@ void test("jittered checks get distinct first schedules that survive a restart",
     const base = Date.parse("2026-09-29T18:05:00.000Z");
     const cap = Date.parse("2026-09-29T18:05:00.000Z") + 5 * 60_000 * 0.2;
     for (const value of due) {
-      const at = Date.parse(value!);
+      const at = Date.parse(value);
       assert.ok(at >= base, `a jittered run must not be earlier than the anchor: ${value}`);
       assert.ok(at <= cap, `a jittered run must stay inside the policy window: ${value}`);
     }
@@ -255,6 +257,130 @@ void test("a check without jitter keeps its exact unjittered schedule", async ()
       storage.getSchedulerState(qualifiedCheckId("payments", "health"))?.nextScheduledAt,
       "2026-09-29T18:05:00.000Z"
     );
+  } finally {
+    storage.close();
+  }
+});
+
+void test("a missed interval keeps one stable phase offset instead of drifting", async () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    const jittered: CheckConfig = { ...check, jitter: 0.2 };
+    const jitteredConfig: SoroSloConfig = {
+      ...config,
+      services: [{ id: "payments", name: "Payments", checks: [jittered] }]
+    };
+    storage.syncConfiguration(jitteredConfig, "config-a");
+    const checkId = qualifiedCheckId("payments", "health");
+
+    const scheduler = new RestartSafeScheduler({
+      ownerId: "runner-a",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+    const scheduled = (): ScheduledCheck[] => [
+      { serviceId: "payments", check: jittered, configHash: "config-a", defaultTimeoutMs: 15_000 }
+    ];
+
+    // Install the first jittered anchor, which carries the phase offset.
+    await scheduler.tick(scheduled(), new Date("2026-09-29T18:00:00.000Z"));
+    const anchor = storage.getSchedulerState(checkId)!.nextScheduledAt;
+    const anchorMs = Date.parse(anchor);
+    const interval = 5 * 60_000;
+    const phase = anchorMs % interval;
+
+    // Skip a missed interval and require the next due time to keep the same
+    // phase. Before the fix the offset was added a second time here.
+    await scheduler.tick(scheduled(), new Date(anchorMs + interval));
+    const afterOne = storage.getSchedulerState(checkId)!.nextScheduledAt;
+    assert.equal(
+      Date.parse(afterOne) % interval,
+      phase,
+      `phase drifted on the first skip: ${anchor} -> ${afterOne}`
+    );
+
+    // Repeat: the drift used to compound on every skip.
+    await scheduler.tick(scheduled(), new Date(Date.parse(afterOne) + interval * 2));
+    const afterTwo = storage.getSchedulerState(checkId)!.nextScheduledAt;
+    assert.equal(
+      Date.parse(afterTwo) % interval,
+      phase,
+      `phase drifted on a repeated skip: ${afterOne} -> ${afterTwo}`
+    );
+
+    // Every skip advances by a whole number of intervals, never a partial one.
+    const advanced = Date.parse(afterTwo) - anchorMs;
+    assert.equal(advanced % interval, 0, `skips advanced by a partial interval: ${advanced}`);
+  } finally {
+    storage.close();
+  }
+});
+
+void test("a manual run does not move the next jittered schedule", async () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    const jittered: CheckConfig = { ...check, jitter: 0.2 };
+    const jitteredConfig: SoroSloConfig = {
+      ...config,
+      services: [{ id: "payments", name: "Payments", checks: [jittered] }]
+    };
+    storage.syncConfiguration(jitteredConfig, "config-a");
+    const checkId = qualifiedCheckId("payments", "health");
+
+    const scheduler = new RestartSafeScheduler({
+      ownerId: "runner-a",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+    await scheduler.tick(
+      [{ serviceId: "payments", check: jittered, configHash: "config-a", defaultTimeoutMs: 15_000 }],
+      new Date("2026-09-29T18:00:00.000Z")
+    );
+
+    const before = storage.getSchedulerState(checkId)!.nextScheduledAt;
+
+    // This is the path the API's manual-run handler takes: run the check under
+    // a `manual:` idempotency key without touching scheduler state. #20
+    // requires it to leave the jittered schedule untouched.
+    await runCheckAndPersist({
+      storage,
+      serviceId: "payments",
+      check: jittered,
+      configHash: "config-a",
+      invoker: {
+        invoke() {
+          return Promise.resolve({
+            status: "success",
+            latestLedger: 123,
+            endpointFingerprint: "rpc123",
+            elapsedMs: 5,
+            diagnosticEventCount: 0,
+            result: "1"
+          });
+        }
+      },
+      idempotencyKey: "manual:req-1"
+    });
+
+    assert.equal(
+      storage.getSchedulerState(checkId)!.nextScheduledAt,
+      before,
+      "a manual run must not move the jittered schedule"
+    );
+
+    // A subsequent tick that is not yet due must also leave it alone.
+    const result = await scheduler.tick(
+      [{ serviceId: "payments", check: jittered, configHash: "config-a", defaultTimeoutMs: 15_000 }],
+      new Date("2026-09-29T18:01:30.000Z")
+    );
+    assert.equal(result[0]?.outcome, "not_due");
+    assert.equal(storage.getSchedulerState(checkId)!.nextScheduledAt, before);
   } finally {
     storage.close();
   }

@@ -169,12 +169,11 @@ export class RestartSafeScheduler {
     }
 
     if (now.getTime() - scheduledMs >= intervalMs) {
-      const next = applyScheduleJitter(
-        nextFutureSchedule(state.nextScheduledAt, intervalMs, now),
-        checkId,
-        intervalMs,
-        scheduledCheck.check.jitter ?? 0
-      );
+      // `state.nextScheduledAt` is already the jittered anchor, so advancing it
+      // by whole intervals preserves the phase offset. Re-applying jitter here
+      // would add the same offset a second time and drift the schedule on every
+      // skip, compounding across repeated misses.
+      const next = nextFutureSchedule(state.nextScheduledAt, intervalMs, now);
       this.store.skipMissedSchedule(checkId, state.nextScheduledAt, next, nowIso);
       return {
         checkId,

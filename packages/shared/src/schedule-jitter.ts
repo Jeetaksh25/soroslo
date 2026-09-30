@@ -60,8 +60,12 @@ export function scheduleJitterMs(
  *
  * Only ever moves a run later. Moving a run earlier would fire it before the
  * interval that the operator configured has elapsed, so the offset is added.
- * The result is rounded to whole seconds so a stored timestamp is readable and
- * stable across serialization.
+ *
+ * The shifted instant is returned exactly. An earlier revision rounded it to a
+ * whole second, which made the two invariants this function promises
+ * unsatisfiable together: for an anchor at `…:00.999` and a window under a
+ * second, the first whole second at or after the anchor already lies past the
+ * bound. Only the caller's anchor is echoed unchanged when jitter is disabled.
  */
 export function applyScheduleJitter(
   scheduledAt: string | Date,
@@ -78,6 +82,7 @@ export function applyScheduleJitter(
   const offset = scheduleJitterMs(checkId, intervalMs, jitterFraction);
   if (offset === 0) return new Date(baseMs).toISOString();
 
-  const shifted = baseMs + offset;
-  return new Date(Math.ceil(shifted / 1_000) * 1_000).toISOString();
+  // `offset` is bounded by the configured share of the interval, so the result
+  // lies in `[baseMs, baseMs + jitterWindow]` on every input.
+  return new Date(baseMs + offset).toISOString();
 }

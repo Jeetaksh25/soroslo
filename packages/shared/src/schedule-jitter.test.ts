@@ -95,11 +95,36 @@ void test("leaves the timestamp untouched when jitter is disabled", () => {
   assert.equal(applyScheduleJitter(base, "svc/check", 10 * MINUTE, 0), base);
 });
 
-void test("rounds the jittered instant to a whole second", () => {
+void test("preserves the exact shifted instant", () => {
   const base = "2026-09-30T12:00:00.456Z";
-  const jittered = applyScheduleJitter(base, "svc/check", 13 * MINUTE, 0.2);
+  const jittered = applyScheduleJitter(base, "svc/check", 13 * MINUTE, MAX_JITTER_FRACTION);
+  const expected = Date.parse(base) + scheduleJitterMs("svc/check", 13 * MINUTE, MAX_JITTER_FRACTION);
 
-  assert.match(jittered, /\.000Z$/, `expected a whole-second timestamp, got ${jittered}`);
+  assert.equal(Date.parse(jittered), expected);
+});
+
+void test("stays inside the window for a sub-second anchor at the maximum offset", () => {
+  // Rounding to a whole second moved this case past the bound: the anchor's
+  // 999ms plus an offset a millisecond under the maximum rounded up beyond
+  // the configured window.
+  const interval = 15 * MINUTE;
+  const span = interval * MAX_JITTER_FRACTION;
+
+  for (const millis of [1, 250, 500, 750, 999]) {
+    const baseMs = Date.parse("2026-09-30T12:00:00.000Z") + millis;
+
+    for (let i = 0; i < 200; i += 1) {
+      const jitteredMs = Date.parse(
+        applyScheduleJitter(new Date(baseMs), `svc/check-${i}`, interval, MAX_JITTER_FRACTION)
+      );
+      const moved = jitteredMs - baseMs;
+      assert.ok(jitteredMs >= baseMs, `run moved earlier than its anchor at +${millis}ms`);
+      assert.ok(
+        moved <= span,
+        `offset ${moved}ms exceeded the ${span}ms window for an anchor at +${millis}ms`
+      );
+    }
+  }
 });
 
 void test("rejects an invalid anchor timestamp", () => {
