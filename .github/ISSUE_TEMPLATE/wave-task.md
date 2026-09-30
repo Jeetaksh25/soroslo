@@ -2,7 +2,7 @@
 name: Wave-ready task
 about: A scoped contributor issue with acceptance criteria and test requirements
 title: ""
-labels: ""
+labels: "enhancement, help wanted"
 assignees: ""
 ---
 
