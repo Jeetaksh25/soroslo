@@ -111,17 +111,14 @@ void test("records operator, expected, observed and reason for string operators"
     }
   );
 
-  assert.deepEqual(
-    evaluateAssertion({ path: "$.memo", op: "ends_with", value: "refund" }, root),
-    {
-      path: "$.memo",
-      operator: "ends_with",
-      expected: "refund",
-      observed: "Payment received",
-      passed: false,
-      reason: "comparison_failed"
-    }
-  );
+  assert.deepEqual(evaluateAssertion({ path: "$.memo", op: "ends_with", value: "refund" }, root), {
+    path: "$.memo",
+    operator: "ends_with",
+    expected: "refund",
+    observed: "Payment received",
+    passed: false,
+    reason: "comparison_failed"
+  });
 });
 
 void test("rejects a non-string observed value with a type mismatch", () => {
@@ -153,10 +150,7 @@ void test("treats an absent path as missing for string operators", () => {
 void test("the empty expected string is a valid substring and prefix", () => {
   const root = { memo: "Payment received" };
 
-  assert.equal(
-    evaluateAssertion({ path: "$.memo", op: "contains", value: "" }, root).passed,
-    true
-  );
+  assert.equal(evaluateAssertion({ path: "$.memo", op: "contains", value: "" }, root).passed, true);
   assert.equal(
     evaluateAssertion({ path: "$.memo", op: "starts_with", value: "" }, root).passed,
     true

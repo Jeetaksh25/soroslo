@@ -163,8 +163,5 @@ void test("accepts a string expected value for string operators", () => {
   const loaded = loadConfigText(source, { environment });
 
   assert.equal(loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0]?.op, "contains");
-  assert.equal(
-    loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0]?.value,
-    "transfer"
-  );
+  assert.equal(loaded.config.services[0]?.checks[0]?.steps[0]?.assertions[0]?.value, "transfer");
 });
