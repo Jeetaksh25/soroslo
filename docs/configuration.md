@@ -95,13 +95,14 @@ checks:
   - id: healthy-read
     every: 5m
     jitter: 0.1
-    steps: []
+    # ... the check's steps, as in the example above
 ```
 
-- The offset is derived from the check's qualified id (`serviceId/checkId`), so it is stable across restarts and does not reshuffle. It is not random.
+- The offset is derived from the check's stable identity, so it is stable across restarts and does not reshuffle. It is not random, and it is not a per-run value.
 - `jitter` is a fraction of the interval, omitted or `0` by default, which leaves the schedule unchanged.
 - The maximum is **`0.2`** of the interval. A larger value is rejected during config validation.
 - A run is only ever moved later, never earlier than the configured interval allows.
+- Changing or removing `jitter` re-phases the next run. The persisted schedule records the policy that produced it, so an existing deployment picks the change up on its next tick rather than keeping the old phase forever.
 - Manual runs do not alter the next jittered schedule.
 
 ## Argument types
