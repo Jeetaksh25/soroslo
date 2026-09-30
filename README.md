@@ -8,9 +8,11 @@ SoroSLO is an open-source, self-hosted reliability monitor that runs read-only S
 
 ![SoroSLO dashboard using real Stellar Testnet evidence](docs/assets/soroslo-overview-testnet.png)
 
-## v0.1.0 release candidate
+## v0.1.0 released
 
-The v0.1 implementation is complete through **M6** and has passed real Stellar Testnet acceptance. The release is published automatically only after this release candidate is merged and the verified `main` CI run succeeds.
+**SoroSLO v0.1.0 is now published** as the first public release. The v0.1 implementation is complete through **M6**, has passed real Stellar Testnet acceptance, and was released from a verified green `main` commit.
+
+[View SoroSLO v0.1.0](https://github.com/SoroSLO/soroslo/releases/tag/v0.1.0).
 
 Verified Testnet evidence:
 
