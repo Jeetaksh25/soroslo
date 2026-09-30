@@ -185,6 +185,7 @@ SoroSLO maintains a public backlog of scoped contributor work with acceptance cr
 - [Browse good first issues](https://github.com/SoroSLO/soroslo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 - [Browse all help-wanted issues](https://github.com/SoroSLO/soroslo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
 - Review the [Wave-ready backlog](docs/wave-backlog.md) for suggested complexity and sequencing.
+- Review the [Drips Stellar Wave readiness checklist](docs/drips-wave-readiness.md) before the next Program application.
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) for the issue-claiming and pull-request workflow.
 - Read [MAINTAINERS.md](MAINTAINERS.md) for review, triage, and maintainer responsibilities.
 
