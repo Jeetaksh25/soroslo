@@ -79,4 +79,3 @@ Current post-v0.1 themes include:
 - scheduler/runner lifecycle hardening;
 - multi-RPC observer corroboration and resource evidence;
 - advanced run-based SLO alerting.
-
