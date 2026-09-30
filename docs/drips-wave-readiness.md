@@ -92,6 +92,16 @@ Because the project currently has one listed maintainer, do not require an exter
 
 Do not require signed commits at this stage because that would raise unnecessary friction for new contributors.
 
+## Application guardrails
+
+Keep the application evidence-based:
+
+- describe the public v0.1 release, Testnet acceptance, CI/security controls, and contributor-ready backlog exactly as they exist;
+- do not claim production adoption, external contributors, users, stars, or ecosystem endorsements that are not independently evidenced;
+- treat all proposed complexity/point totals as planning estimates until they are set in Drips;
+- do not create filler issues or downscope meaningful work just to increase the number of Wave tasks;
+- re-check repository state immediately before submitting because Program admission remains an organizer decision.
+
 ## Maintainer-readiness audit — 2026-09-30
 
 Verified baseline:
