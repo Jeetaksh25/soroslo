@@ -10,7 +10,7 @@ The authoritative v0.1 contract is [`docs/technical-spec-v0.1.md`](docs/technica
 - [x] Governance/security documents
 - [x] Initial ADRs
 - [x] Generate and commit pnpm lockfile from a networked development environment
-- [ ] Protect `main` after the first green CI run
+- [x] Protect `main` after the first green CI run
 
 ## M1 — Stellar probe core
 
