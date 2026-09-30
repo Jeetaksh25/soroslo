@@ -46,3 +46,6 @@ services:
               - path: $.timestamp
                 op: age_lt
                 value: 5m
+              - path: $.value
+                op: starts_with
+                value: "4"

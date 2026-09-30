@@ -61,3 +61,108 @@ void test("returns structured type mismatches instead of coercing", () => {
   assert.equal(result.passed, false);
   assert.equal(result.reason, "type_mismatch");
 });
+
+void test("matches the string operators case-sensitively", () => {
+  const root = {
+    memo: "Payment received",
+    type: "transfer",
+    issuer: "GABCDEF",
+    nested: { text: "Soroban" }
+  };
+
+  assert.equal(
+    evaluateAssertion({ path: "$.memo", op: "contains", value: "Payment" }, root).passed,
+    true
+  );
+  assert.equal(
+    evaluateAssertion({ path: "$.memo", op: "contains", value: "payment" }, root).passed,
+    false
+  );
+  assert.equal(
+    evaluateAssertion({ path: "$.type", op: "starts_with", value: "trans" }, root).passed,
+    true
+  );
+  assert.equal(
+    evaluateAssertion({ path: "$.type", op: "starts_with", value: "Trans" }, root).passed,
+    false
+  );
+  assert.equal(
+    evaluateAssertion({ path: "$.issuer", op: "ends_with", value: "DEF" }, root).passed,
+    true
+  );
+  assert.equal(
+    evaluateAssertion({ path: "$.nested.text", op: "contains", value: "roba" }, root).passed,
+    true
+  );
+});
+
+void test("records operator, expected, observed and reason for string operators", () => {
+  const root = { memo: "Payment received" };
+
+  assert.deepEqual(
+    evaluateAssertion({ path: "$.memo", op: "starts_with", value: "Payment" }, root),
+    {
+      path: "$.memo",
+      operator: "starts_with",
+      expected: "Payment",
+      observed: "Payment received",
+      passed: true,
+      reason: "matched"
+    }
+  );
+
+  assert.deepEqual(
+    evaluateAssertion({ path: "$.memo", op: "ends_with", value: "refund" }, root),
+    {
+      path: "$.memo",
+      operator: "ends_with",
+      expected: "refund",
+      observed: "Payment received",
+      passed: false,
+      reason: "comparison_failed"
+    }
+  );
+});
+
+void test("rejects a non-string observed value with a type mismatch", () => {
+  for (const value of [42, true, null, { a: 1 }, [1]]) {
+    const result = evaluateAssertion({ path: "$.value", op: "contains", value: "4" }, { value });
+    assert.equal(result.passed, false);
+    assert.equal(result.reason, "type_mismatch");
+    assert.equal(result.observed, value);
+  }
+});
+
+void test("rejects a non-string expected value as invalid", () => {
+  for (const value of [42, true, null, ["a"], { a: 1 }]) {
+    const result = evaluateAssertion(
+      { path: "$.memo", op: "contains", value },
+      { memo: "Payment received" }
+    );
+    assert.equal(result.passed, false);
+    assert.equal(result.reason, "invalid_expected_value");
+  }
+});
+
+void test("treats an absent path as missing for string operators", () => {
+  const result = evaluateAssertion({ path: "$.nope", op: "contains", value: "x" }, {});
+  assert.equal(result.passed, false);
+  assert.equal(result.reason, "missing_path");
+});
+
+void test("the empty expected string is a valid substring and prefix", () => {
+  const root = { memo: "Payment received" };
+
+  assert.equal(
+    evaluateAssertion({ path: "$.memo", op: "contains", value: "" }, root).passed,
+    true
+  );
+  assert.equal(
+    evaluateAssertion({ path: "$.memo", op: "starts_with", value: "" }, root).passed,
+    true
+  );
+  assert.equal(
+    evaluateAssertion({ path: "$.memo", op: "ends_with", value: "" }, root).passed,
+    true
+  );
+});

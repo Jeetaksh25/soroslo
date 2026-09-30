@@ -2,7 +2,18 @@ import { canonicalJson, getJsonPath, parseDurationMs } from "@soroslo/shared";
 import { compareExactNumeric } from "./numeric.js";
 
 export type AssertionOperator =
-  "equals" | "not_equals" | "gt" | "gte" | "lt" | "lte" | "exists" | "not_exists" | "age_lt";
+  | "equals"
+  | "not_equals"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "exists"
+  | "not_exists"
+  | "age_lt"
+  | "contains"
+  | "starts_with"
+  | "ends_with";
 
 export interface AssertionSpec {
   path: string;
@@ -74,6 +85,37 @@ export function evaluateAssertion(
   if (spec.op === "equals" || spec.op === "not_equals") {
     const equal = equalValues(pathResult.value, spec.value);
     const passed = spec.op === "equals" ? equal : !equal;
+    return result(spec, pathResult.value, passed, passed ? "matched" : "comparison_failed");
+  }
+
+  if (spec.op === "contains" || spec.op === "starts_with" || spec.op === "ends_with") {
+    // Both sides must be strings. A non-string observed value is a type
+    // mismatch in the evidence rather than a coercion, and an expected value
+    // that is not a string cannot describe a string check at all.
+    if (typeof spec.value !== "string") {
+      return result(spec, pathResult.value, false, "invalid_expected_value");
+    }
+
+    if (typeof pathResult.value !== "string") {
+      return result(spec, pathResult.value, false, "type_mismatch");
+    }
+
+    // Deliberately case-sensitive and free of regex: the operators describe
+    // plain substring relationships so the same spec always yields the same
+    // verdict on any runtime.
+    let passed: boolean;
+    switch (spec.op) {
+      case "contains":
+        passed = pathResult.value.includes(spec.value);
+        break;
+      case "starts_with":
+        passed = pathResult.value.startsWith(spec.value);
+        break;
+      default:
+        passed = pathResult.value.endsWith(spec.value);
+        break;
+    }
+
     return result(spec, pathResult.value, passed, passed ? "matched" : "comparison_failed");
   }
 
