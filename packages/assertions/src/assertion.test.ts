@@ -166,9 +166,12 @@ void test("rejects malformed between bounds and non-numeric observed values", ()
       .reason,
     "type_mismatch"
   );
+  // A non-numeric *bound* is the expected value's fault, not the observed
+  // value's, so it reads as invalid_expected_value even though the observed
+  // value here is a number.
   assert.equal(
     evaluateAssertion({ path: "$.value", op: "between", value: { lower: "a", upper: "b" } }, { value: 3 })
       .reason,
-    "type_mismatch"
+    "invalid_expected_value"
   );
 });
