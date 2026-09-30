@@ -77,7 +77,7 @@ void test("executes a due check once and advances persisted scheduler state", as
     storage.migrate();
     storage.syncConfiguration(config, "config-a");
     const checkId = qualifiedCheckId("payments", "health");
-    storage.ensureSchedulerState(checkId, "2026-09-29T18:05:00.000Z");
+    storage.ensureSchedulerState(checkId, "2026-09-29T18:05:00.000Z", "test-policy");
 
     const contexts: string[] = [];
     const scheduler = new RestartSafeScheduler({
@@ -115,7 +115,7 @@ void test("skips stale missed intervals instead of replaying them", async () => 
     storage.migrate();
     storage.syncConfiguration(config, "config-a");
     const checkId = qualifiedCheckId("payments", "health");
-    storage.ensureSchedulerState(checkId, "2026-09-29T18:00:00.000Z");
+    storage.ensureSchedulerState(checkId, "2026-09-29T18:00:00.000Z", "test-policy");
 
     let calls = 0;
     const scheduler = new RestartSafeScheduler({
@@ -381,6 +381,151 @@ void test("a manual run does not move the next jittered schedule", async () => {
     );
     assert.equal(result[0]?.outcome, "not_due");
     assert.equal(storage.getSchedulerState(checkId)!.nextScheduledAt, before);
+  } finally {
+    storage.close();
+  }
+});
+
+void test("reconciles jitter onto an existing unjittered schedule", async () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    const jittered: CheckConfig = { ...check, jitter: 0.2 };
+    const jitteredConfig: SoroSloConfig = {
+      ...config,
+      services: [{ id: "payments", name: "Payments", checks: [jittered] }]
+    };
+    storage.syncConfiguration(jitteredConfig, "config-a");
+    const checkId = qualifiedCheckId("payments", "health");
+
+    // Simulate a v0.1 deployment: a persisted row with no policy fingerprint and
+    // an exact, unjittered due time. Enabling jitter must re-phase it.
+    storage.ensureSchedulerState(checkId, "2026-09-29T18:05:00.000Z", "stale-policy");
+
+    const scheduler = new RestartSafeScheduler({
+      ownerId: "runner-a",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+    const scheduled = (): ScheduledCheck[] => [
+      { serviceId: "payments", check: jittered, configHash: "config-a", defaultTimeoutMs: 15_000 }
+    ];
+
+    const result = await scheduler.tick(scheduled(), new Date("2026-09-29T18:00:00.000Z"));
+
+    assert.equal(result[0]?.outcome, "not_due");
+    const after = storage.getSchedulerState(checkId)!;
+    assert.notEqual(
+      after.nextScheduledAt,
+      "2026-09-29T18:05:00.000Z",
+      "enabling jitter must move the persisted unjittered schedule"
+    );
+    // It must be a real jittered instant: at or after the anchor, inside the
+    // policy window, and carrying the new fingerprint.
+    const base = Date.parse("2026-09-29T18:05:00.000Z");
+    const at = Date.parse(after.nextScheduledAt);
+    assert.ok(at >= base && at <= base + 5 * 60_000 * 0.2, `out of window: ${after.nextScheduledAt}`);
+    assert.notEqual(after.schedulePolicyHash, "stale-policy");
+  } finally {
+    storage.close();
+  }
+});
+
+void test("changing and disabling jitter re-phases an existing schedule", async () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    const checkId = qualifiedCheckId("payments", "health");
+    const scheduler = new RestartSafeScheduler({
+      ownerId: "runner-a",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+    const now = new Date("2026-09-29T18:00:00.000Z");
+
+    const runWith = async (jitter: number): Promise<string> => {
+      const configured: CheckConfig = { ...check, jitter };
+      storage.syncConfiguration(
+        { ...config, services: [{ id: "payments", name: "Payments", checks: [configured] }] },
+        "config-a"
+      );
+      await scheduler.tick(
+        [
+          {
+            serviceId: "payments",
+            check: configured,
+            configHash: "config-a",
+            defaultTimeoutMs: 15_000
+          }
+        ],
+        now
+      );
+      return storage.getSchedulerState(checkId)!.nextScheduledAt;
+    };
+
+    const withJitter = await runWith(0.2);
+    const changed = await runWith(0.05);
+    assert.notEqual(changed, withJitter, "changing the fraction must re-phase");
+
+    const disabled = await runWith(0);
+    assert.equal(
+      disabled,
+      "2026-09-29T18:05:00.000Z",
+      "disabling jitter must return the exact unjittered schedule"
+    );
+  } finally {
+    storage.close();
+  }
+});
+
+void test("a restart after reconciliation preserves the new phase", async () => {
+  const storage = SoroSloStorage.open();
+  try {
+    storage.migrate();
+    const jittered: CheckConfig = { ...check, jitter: 0.2 };
+    const jitteredConfig: SoroSloConfig = {
+      ...config,
+      services: [{ id: "payments", name: "Payments", checks: [jittered] }]
+    };
+    storage.syncConfiguration(jitteredConfig, "config-a");
+    const checkId = qualifiedCheckId("payments", "health");
+    storage.ensureSchedulerState(checkId, "2026-09-29T18:05:00.000Z", "stale-policy");
+
+    const scheduled = (): ScheduledCheck[] => [
+      { serviceId: "payments", check: jittered, configHash: "config-a", defaultTimeoutMs: 15_000 }
+    ];
+    const now = new Date("2026-09-29T18:00:00.000Z");
+
+    const first = new RestartSafeScheduler({
+      ownerId: "runner-a",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+    await first.tick(scheduled(), now);
+    const reconciled = storage.getSchedulerState(checkId)!.nextScheduledAt;
+
+    // A second runner with a different owner id, on the same database, must not
+    // re-phase again: the fingerprint now matches the configuration.
+    const second = new RestartSafeScheduler({
+      ownerId: "runner-b",
+      store: storage,
+      executor() {
+        return Promise.resolve();
+      }
+    });
+    await second.tick(scheduled(), now);
+
+    assert.equal(
+      storage.getSchedulerState(checkId)!.nextScheduledAt,
+      reconciled,
+      "a restart must preserve the reconciled phase"
+    );
   } finally {
     storage.close();
   }
