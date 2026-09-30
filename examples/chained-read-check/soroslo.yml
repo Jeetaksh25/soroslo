@@ -13,8 +13,8 @@ services:
   - id: fixture-service
     name: SoroSLO Testnet fixture
     checks:
-      - id: healthy-read
-        name: Fixture health and freshness remain usable
+      - id: chained-read
+        name: Prior-step value can feed a later simulation
         network: testnet
         every: 5m
         timeout: 15s
@@ -26,23 +26,22 @@ services:
           maxObserverErrorRate: 5
 
         steps:
-          - id: healthy
+          - id: base
             contract: ${SOROSLO_TESTNET_FIXTURE_CONTRACT}
-            function: healthy
+            function: value
             args: []
             assertions:
               - path: $
                 op: equals
-                value: true
-
-          - id: snapshot
-            contract: ${SOROSLO_TESTNET_FIXTURE_CONTRACT}
-            function: snapshot
-            args: []
-            assertions:
-              - path: $.value
-                op: equals
                 value: "42"
-              - path: $.timestamp
-                op: age_lt
-                value: 5m
+
+          - id: doubled
+            contract: ${SOROSLO_TESTNET_FIXTURE_CONTRACT}
+            function: double
+            args:
+              - type: i128
+                from: $steps.base.result
+            assertions:
+              - path: $
+                op: equals
+                value: "84"

@@ -2,108 +2,184 @@
 
 **Synthetic service-level monitoring for Stellar/Soroban applications.**
 
-SoroSLO is an open-source, self-hosted reliability platform that runs read-only Soroban simulations against deployed contracts, evaluates deterministic application-level assertions, stores historical evidence, and calculates rolling SLO/error-budget status.
-
-SoroSLO answers a different question from a contract explorer or TTL monitor:
+SoroSLO is an open-source, self-hosted reliability monitor that runs read-only Soroban simulations against deployed contracts, evaluates deterministic application-level assertions, stores durable evidence, and calculates rolling SLI/SLO and error-budget state.
 
 > Is the service built from my deployed Soroban contracts actually behaving correctly against its declared reliability target?
 
-## Project status
+![SoroSLO dashboard using real Stellar Testnet evidence](docs/assets/soroslo-overview-testnet.png)
 
-SoroSLO is in **pre-v0.1 active development**. The v0.1 technical contract is frozen in [`docs/technical-spec-v0.1.md`](docs/technical-spec-v0.1.md). Milestones M0–M5 now provide the probe engine, check execution, persistence/reliability layer, API/dashboard, signed notifications, authentication, Docker Compose packaging, and browser E2E coverage.
+## v0.1.0 release candidate
+
+The v0.1 implementation is complete through **M6** and has passed real Stellar Testnet acceptance. The release is published automatically only after this release candidate is merged and the verified `main` CI run succeeds.
+
+Verified Testnet evidence:
+
+- contract: `CBXNPLHGKIKF22QUEFWJFL6C7RY7HMWHMZHXQ5L2M2VXMVMOLL3TKPZW`
+- live acceptance: healthy read `pass`
+- chained read `pass`
+- false assertion `service_fail`
+- deterministic contract error `service_fail`
+- unreachable RPC `observer_error`
+- SoroSLO runtime signing key: **none**
+- SoroSLO transaction submission: **none**
+
+See [Testnet acceptance evidence](docs/testnet-acceptance.md).
 
 ## Core principles
 
-- **Simulation-only in v0.1.** No transaction signing or submission.
-- **No custody.** SoroSLO never needs a Stellar secret key or seed phrase.
-- **Deterministic assertions.** No `eval`, arbitrary JavaScript, or untrusted plugin execution.
-- **Evidence-first.** Every result must be traceable to a check configuration, observed ledger, RPC endpoint fingerprint, and assertion result.
-- **Run-based SLOs.** We do not misrepresent periodic samples as exact seconds of uptime.
-- **Local-first.** SQLite and a single self-hosted deployment are the v0.1 baseline.
-- **Complement, don't clone.** TTL remediation, event indexing, deployment management, formal verification, source verification, and protocol compatibility are intentionally outside the core scope.
+- **Simulation-only.** Runtime checks use Stellar RPC `simulateTransaction`; SoroSLO does not sign or submit transactions.
+- **No custody.** No Stellar secret seed, mnemonic, private signing key, or wallet session is required.
+- **Deterministic assertions.** No `eval`, arbitrary JavaScript, shell hooks, or untrusted plugins.
+- **Evidence-first.** Results are tied to configuration, observed ledger, RPC endpoint fingerprint, step evidence, and assertion evidence.
+- **Run-based SLOs.** Periodic samples are not presented as exact wall-clock uptime.
+- **Observer honesty.** RPC/tool failures are `observer_error`, not service failures.
+- **Local-first.** SQLite and self-hosted deployment are the v0.1 baseline.
+- **Focused scope.** TTL remediation, full event indexing, deployment management, source verification, and protocol compatibility are separate concerns.
 
-## Planned v0.1 flow
+## Runtime flow
 
 ```text
 soroslo.yml
     │
     ▼
-Config validation
+strict configuration validation
     │
     ▼
-Scheduled synthetic check
+scheduled synthetic check
     │
     ├── simulate Soroban call
-    ├── decode result
+    ├── normalize result
     ├── evaluate assertions
     └── persist evidence
     │
     ▼
-Run classification
- pass / service_fail / observer_error
+pass / service_fail / observer_error
     │
     ▼
-Rolling SLI + SLO + error budget
+rolling SLI + SLO + error budget
     │
-    ├── Dashboard
-    └── Incident + signed webhook
+    ├── dashboard / API
+    └── incident + signed webhook
 ```
 
-## Repository layout
-
-```text
-apps/
-  api/          HTTP API surface
-  dashboard/    web UI
-  runner/       scheduler + check execution process
-packages/
-  config/       versioned config parsing and validation
-  stellar/      Stellar RPC/simulation adapter
-  probe-engine/ ordered step execution and result references
-  assertions/   deterministic assertion engine
-  slo-engine/   SLI/SLO/error-budget calculations
-  storage/      persistence boundary
-  alerts/       incidents and notification delivery
-  shared/       shared domain types/utilities
-cli/            operator CLI
-contracts/      Testnet-only acceptance fixtures
-examples/       runnable example configurations
-```
-
-## Milestones
-
-- **M0 — Foundation:** repository, workspace, CI, governance, architecture decisions.
-- **M1 — Stellar probe core:** network config, RPC client, simulation, return decoding.
-- **M2 — Check engine:** config schema, step runner, references, assertions, classification.
-- **M3 — Persistence & reliability:** SQLite, scheduler, SLI/SLO, error budget, incidents.
-- **M4 — Product surfaces:** API, dashboard, run/check/incident details.
-- **M5 — Notifications & hardening:** signed webhooks, retry/dedupe, auth, Docker, E2E.
-- **M6 — Ecosystem evidence:** Testnet fixture, acceptance run, examples, v0.1.0 release.
-
-## Local development
+## Quick start
 
 Prerequisites:
 
 - Node.js 22+
-- Corepack
-- pnpm 10.x
+- Corepack / pnpm 10.x
+- Docker + Compose for the self-hosted stack
+
+Development verification:
 
 ```bash
 corepack enable
 pnpm install
 pnpm verify
+pnpm test:e2e
 ```
 
-For self-hosting, copy `.env.example` to `.env`, create `soroslo.yml`, and run `docker compose up --build -d`. See [`docs/operations.md`](docs/operations.md) for API/runner process options, authentication, webhook verification, and remote-deployment guidance.
+Self-hosting:
 
-## Security
+```bash
+cp .env.example .env
+# create soroslo.yml and set a long SOROSLO_ADMIN_TOKEN in .env
+docker compose up --build -d
+```
 
-SoroSLO v0.1 must never accept or persist Stellar secret seeds, mnemonic phrases, private signing keys, or wallet sessions. See [`SECURITY.md`](SECURITY.md) and [`docs/architecture/security-boundaries.md`](docs/architecture/security-boundaries.md).
+The default published interfaces remain loopback-only.
+
+## Configuration example
+
+```yaml
+version: 1
+
+runtime:
+  timezone: UTC
+  dataDir: ./.soroslo
+  defaultTimeout: 15s
+
+networks:
+  testnet:
+    preset: testnet
+
+services:
+  - id: payments
+    name: Payments
+    checks:
+      - id: quote-health
+        name: Quote health
+        network: testnet
+        every: 5m
+        slo:
+          target: 99.9
+          window: 7d
+          minEligibleRuns: 20
+          maxObserverErrorRate: 5
+        steps:
+          - id: quote
+            contract: ${STELLAR_CONTRACT_ID}
+            function: latest_quote
+            args: []
+            assertions:
+              - path: $.value
+                op: gt
+                value: "0"
+```
+
+See [configuration](docs/configuration.md) and the runnable [examples](examples/).
+
+## Documentation
+
+- [v0.1 technical specification](docs/technical-spec-v0.1.md)
+- [configuration reference](docs/configuration.md)
+- [HTTP API](docs/api.md)
+- [SLI/SLO semantics](docs/slo-semantics.md)
+- [operations and Docker deployment](docs/operations.md)
+- [threat model](docs/threat-model.md)
+- [security boundaries](docs/architecture/security-boundaries.md)
+- [real Testnet acceptance evidence](docs/testnet-acceptance.md)
+- [v0.1.0 release notes](docs/releases/v0.1.0.md)
+
+## Repository layout
+
+```text
+apps/
+  api/          HTTP API and manual-run entrypoint
+  dashboard/    Next.js operator UI
+  runner/       restart-safe scheduler and execution daemon
+packages/
+  config/       strict versioned configuration
+  stellar/      RPC, network identity, simulation, normalization
+  probe-engine/ ordered check execution and result references
+  assertions/   deterministic assertion engine
+  slo-engine/   SLI/SLO/error-budget and incident state
+  storage/      SQLite migrations and persistence
+  alerts/       signed webhook delivery and deduplication
+  shared/       shared domain utilities
+cli/            operator CLI package boundary
+contracts/      Testnet acceptance fixture
+examples/       example configurations
+```
+
+## Milestones
+
+- **M0 — Foundation** ✅
+- **M1 — Stellar probe core** ✅
+- **M2 — Check engine** ✅
+- **M3 — Persistence & reliability** ✅
+- **M4 — Product surfaces** ✅
+- **M5 — Notifications & hardening** ✅
+- **M6 — Ecosystem evidence / release readiness** ✅
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). Before proposing a feature, review the v0.1 non-goals in the technical specification so the project stays focused.
+See [CONTRIBUTING.md](CONTRIBUTING.md). The public backlog contains scoped contributor tasks with acceptance criteria, tests, dependencies, non-goals, and security notes.
+
+## Security
+
+SoroSLO runtime must never accept or persist Stellar secret seeds, mnemonic phrases, private signing keys, or wallet sessions. See [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache License 2.0. See [`LICENSE`](LICENSE).
+Apache License 2.0. See [LICENSE](LICENSE).

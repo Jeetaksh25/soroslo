@@ -1,0 +1,105 @@
+name: Testnet Acceptance
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 0"
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+
+      - name: Setup Stellar CLI
+        uses: stellar/stellar-cli@v28.1.0
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build SoroSLO
+        run: pnpm build
+
+      - name: Test fixture
+        run: cargo test --locked --manifest-path contracts/fixtures/Cargo.toml
+
+      - name: Build fixture WASM
+        run: stellar contract build --manifest-path contracts/fixtures/Cargo.toml
+
+      - name: Create ephemeral Testnet deployer
+        run: stellar keys generate soroslo-acceptance --network testnet --fund
+
+      - name: Deploy fixture to Testnet
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          CONTRACT_ID="$(
+            stellar contract deploy               --source soroslo-acceptance               --network testnet               --wasm contracts/fixtures/target/wasm32v1-none/release/soroslo_fixture.wasm
+          )"
+          echo "contract_id=$CONTRACT_ID" >> "$GITHUB_OUTPUT"
+          echo "### Testnet fixture" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Contract ID: $CONTRACT_ID" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Sanity-check fixture read
+        env:
+          CONTRACT_ID: ${{ steps.deploy.outputs.contract_id }}
+        run: |
+          stellar contract invoke             --id "$CONTRACT_ID"             --source-account soroslo-acceptance             --network testnet             --             healthy
+
+      - name: Run SoroSLO live acceptance
+        env:
+          SOROSLO_TESTNET_FIXTURE_CONTRACT: ${{ steps.deploy.outputs.contract_id }}
+          SOROSLO_ACCEPTANCE_OUTPUT: acceptance/testnet-evidence.json
+        run: |
+          mkdir -p acceptance
+          node scripts/live-testnet-acceptance.mjs
+          cp contracts/fixtures/Cargo.lock acceptance/fixture-Cargo.lock
+          stellar --version > acceptance/stellar-cli-version.txt
+          rustc --version > acceptance/rust-version.txt
+          printf '%s\n' "$GITHUB_SHA" > acceptance/git-sha.txt
+
+      - name: Publish evidence summary
+        env:
+          CONTRACT_ID: ${{ steps.deploy.outputs.contract_id }}
+        run: |
+          {
+            echo ""
+            echo "### SoroSLO acceptance"
+            echo "- Network: Stellar Testnet"
+            echo "- SoroSLO runtime signing key: none"
+            echo "- SoroSLO RPC operation: simulateTransaction"
+            echo "- Evidence artifact: soroslo-testnet-acceptance-$GITHUB_RUN_ID"
+            echo "- Contract ID: $CONTRACT_ID"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload acceptance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: soroslo-testnet-acceptance-${{ github.run_id }}
+          path: acceptance/
+          if-no-files-found: error
+          retention-days: 90

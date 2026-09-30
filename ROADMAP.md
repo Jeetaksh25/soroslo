@@ -56,8 +56,8 @@ The authoritative v0.1 contract is [`docs/technical-spec-v0.1.md`](docs/technica
 
 ## M6 — Ecosystem evidence
 
-- [ ] Testnet fixture contract
-- [ ] Live acceptance evidence
-- [ ] Examples
+- [x] Testnet fixture contract
+- [x] Live acceptance evidence
+- [x] Examples
 - [ ] v0.1.0 release
-- [ ] Contributor-ready Wave backlog
+- [x] Contributor-ready Wave backlog

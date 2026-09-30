@@ -1,5 +1,22 @@
-# Testnet fixture contracts
+# SoroSLO Testnet acceptance fixture
 
-The v0.1 acceptance fixture lands in M6. It will provide deterministic read-only functions for successful reads, structured values, freshness checks, and deliberate contract errors.
+This directory contains the tiny Rust/Soroban contract used only for SoroSLO v0.1 acceptance testing.
 
-No fixture secret key or funded identity is committed to this repository.
+The fixture exposes deterministic read-only functions:
+
+- `healthy() -> bool` — always returns `true`;
+- `value() -> i128` — always returns `42`;
+- `double(value: i128) -> i128` — used to verify prior-step references;
+- `snapshot() -> Map<Symbol, i128>` — returns `value`, current ledger sequence, and ledger timestamp for path/freshness assertions;
+- `fail() -> Result<(), FixtureError>` — deterministic contract error.
+
+The contract is not part of the SoroSLO runtime and no deployment identity is committed to the repository. The live Testnet workflow generates and funds an ephemeral identity only for fixture deployment. Normal SoroSLO acceptance execution receives only the public contract ID and uses `simulateTransaction`; it never receives the deployment secret.
+
+## Local checks
+
+```bash
+cargo test --manifest-path contracts/fixtures/Cargo.toml
+stellar contract build --manifest-path contracts/fixtures/Cargo.toml
+```
+
+See `docs/testnet-acceptance.md` for the latest verified Testnet evidence.
