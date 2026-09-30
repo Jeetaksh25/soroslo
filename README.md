@@ -176,7 +176,13 @@ examples/       example configurations
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The public backlog contains scoped contributor tasks with acceptance criteria, tests, dependencies, non-goals, and security notes.
+SoroSLO maintains a public backlog of scoped contributor work with acceptance criteria, tests, dependencies, non-goals, and security notes.
+
+- [Browse good first issues](https://github.com/SoroSLO/soroslo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+- [Browse all help-wanted issues](https://github.com/SoroSLO/soroslo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) for the issue-claiming and pull-request workflow.
+
+If you want to work on an issue, comment with your intended approach first and wait for maintainer confirmation before beginning substantial implementation.
 
 ## Security
 
