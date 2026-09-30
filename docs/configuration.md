@@ -105,8 +105,28 @@ v0.1 operators:
 - `exists`
 - `not_exists`
 - `age_lt`
+- `contains`
+- `starts_with`
+- `ends_with`
 
-Numeric comparisons are exact. There is no JavaScript, regex, shell, or plugin execution.
+Numeric comparisons are exact. `contains`, `starts_with` and `ends_with` apply to
+string values only: a non-string expected value is reported as
+`invalid_expected_value`, a non-string observed value as `type_mismatch`, and
+comparison is case-sensitive with no regex or pattern language. There is no
+JavaScript, regex, shell, or plugin execution.
+
+```yaml
+assertions:
+  - path: $.memo
+    op: starts_with
+    value: "Payment"
+  - path: $.event.type
+    op: contains
+    value: "transfer"
+  - path: $.asset.code
+    op: ends_with
+    value: "USDC"
+```
 
 ## SLO policy
 

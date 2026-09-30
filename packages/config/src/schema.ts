@@ -90,7 +90,10 @@ export const assertionOperatorSchema = z.enum([
   "lte",
   "exists",
   "not_exists",
-  "age_lt"
+  "age_lt",
+  "contains",
+  "starts_with",
+  "ends_with"
 ]);
 
 const assertionValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
