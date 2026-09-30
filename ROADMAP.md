@@ -59,5 +59,5 @@ The authoritative v0.1 contract is [`docs/technical-spec-v0.1.md`](docs/technica
 - [x] Testnet fixture contract
 - [x] Live acceptance evidence
 - [x] Examples
-- [ ] v0.1.0 release
+- [x] v0.1.0 release
 - [x] Contributor-ready Wave backlog
