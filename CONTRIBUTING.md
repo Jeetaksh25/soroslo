@@ -11,6 +11,10 @@ Start from the public issue backlog:
 
 Read the full issue before starting. Contributor-ready issues include the problem, scope, acceptance criteria, tests, likely packages, dependencies, non-goals, and security/compatibility notes.
 
+### Wave-program issues
+
+If an issue carries a Drips Wave Program label (for example, `Stellar Wave`), follow the application flow in the Drips Wave app instead of the generic claiming workflow below. Maintainers will review Wave applications and assign the selected contributor through the Wave flow. Do not ask for a pre-Wave manual assignment on a Wave-labeled issue.
+
 ## Claiming an issue
 
 1. Comment on the issue before substantial implementation work.
