@@ -7,6 +7,7 @@ import {
   RestartSafeScheduler,
   nextFutureSchedule,
   scheduledRunIdempotencyKey,
+  schedulePolicyHash,
   type ScheduledCheck
 } from "./scheduler.js";
 
@@ -77,7 +78,11 @@ void test("executes a due check once and advances persisted scheduler state", as
     storage.migrate();
     storage.syncConfiguration(config, "config-a");
     const checkId = qualifiedCheckId("payments", "health");
-    storage.ensureSchedulerState(checkId, "2026-09-29T18:05:00.000Z", "test-policy");
+    storage.ensureSchedulerState(
+      checkId,
+      "2026-09-29T18:05:00.000Z",
+      schedulePolicyHash(checkId, 5 * 60_000, 0)
+    );
 
     const contexts: string[] = [];
     const scheduler = new RestartSafeScheduler({
@@ -115,7 +120,11 @@ void test("skips stale missed intervals instead of replaying them", async () => 
     storage.migrate();
     storage.syncConfiguration(config, "config-a");
     const checkId = qualifiedCheckId("payments", "health");
-    storage.ensureSchedulerState(checkId, "2026-09-29T18:00:00.000Z", "test-policy");
+    storage.ensureSchedulerState(
+      checkId,
+      "2026-09-29T18:00:00.000Z",
+      schedulePolicyHash(checkId, 5 * 60_000, 0)
+    );
 
     let calls = 0;
     const scheduler = new RestartSafeScheduler({
@@ -469,7 +478,21 @@ void test("changing and disabling jitter re-phases an existing schedule", async 
 
     const withJitter = await runWith(0.2);
     const changed = await runWith(0.05);
-    assert.notEqual(changed, withJitter, "changing the fraction must re-phase");
+
+    // A different fraction produces a different span, so the offset is
+    // recomputed. The two offsets can coincide by chance, so this asserts the
+    // stored policy actually changed and that the result is a valid instant for
+    // the new policy rather than asserting the instants differ.
+    const base = Date.parse("2026-09-29T18:05:00.000Z");
+    const changedAt = Date.parse(changed);
+    assert.ok(
+      changedAt >= base && changedAt <= base + 5 * 60_000 * 0.05,
+      `changed fraction produced ${changed}, outside the 0.05 window`
+    );
+    assert.equal(
+      storage.getSchedulerState(checkId)!.schedulePolicyHash,
+      schedulePolicyHash(checkId, 5 * 60_000, 0.05)
+    );
 
     const disabled = await runWith(0);
     assert.equal(
@@ -477,6 +500,7 @@ void test("changing and disabling jitter re-phases an existing schedule", async 
       "2026-09-29T18:05:00.000Z",
       "disabling jitter must return the exact unjittered schedule"
     );
+    assert.notEqual(withJitter, disabled, "the jittered and unjittered phases must differ");
   } finally {
     storage.close();
   }
