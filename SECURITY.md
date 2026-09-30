@@ -4,11 +4,9 @@
 
 SoroSLO follows a latest-release support model.
 
-| Version | Supported |
-| --- | --- |
-| 0.1.x | ✅ |
-| main | ✅ development branch |
-| older/unreleased snapshots | ❌ |
+- `0.1.x`: supported.
+- `main`: supported development branch.
+- Older/unreleased snapshots: not supported.
 
 Security fixes are applied to the latest supported release line and `main`. If a vulnerability requires a release, maintainers will publish a patched release and document any operator action required.
 
